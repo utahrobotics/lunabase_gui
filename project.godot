@@ -9,10 +9,10 @@
 config_version=4
 
 _global_script_classes=[ {
-"base": "Label",
-"class": "OdometryListener",
+"base": "Reference",
+"class": "Odometry",
 "language": "GDScript",
-"path": "res://odometry_iistener.gd"
+"path": "res://odometry.gd"
 }, {
 "base": "Line2D",
 "class": "PathingRender",
@@ -20,7 +20,7 @@ _global_script_classes=[ {
 "path": "res://pathing_render.gd"
 } ]
 _global_script_class_icons={
-"OdometryListener": "",
+"Odometry": "",
 "PathingRender": ""
 }
 
@@ -33,6 +33,15 @@ config/icon="res://icon.png"
 [autoload]
 
 BotServer="*res://bot_server.gd"
+
+[input]
+
+change_autonomy={
+"deadzone": 0.5,
+"events": [ Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":3,"pressure":0.0,"pressed":false,"script":null)
+, Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":88,"unicode":0,"echo":false,"script":null)
+ ]
+}
 
 [physics]
 
