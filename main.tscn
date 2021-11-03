@@ -1,7 +1,10 @@
-[gd_scene load_steps=6 format=2]
+[gd_scene load_steps=10 format=2]
 
+[ext_resource path="res://controllable_node.gd" type="Script" id=1]
 [ext_resource path="res://bot.tscn" type="PackedScene" id=2]
 [ext_resource path="res://pathing_render.gd" type="Script" id=3]
+[ext_resource path="res://position_gizmo.tscn" type="PackedScene" id=4]
+[ext_resource path="res://rotation_gizmo.tscn" type="PackedScene" id=5]
 
 [sub_resource type="GDScript" id=1]
 script/source = "extends Label
@@ -13,12 +16,13 @@ func _handle_bot_data(parsed: Dictionary) -> void:
 	text = parsed[BotServer.AUTONOMY_STAGE].capitalize()
 "
 
-[sub_resource type="GDScript" id=2]
+[sub_resource type="GDScript" id=5]
 script/source = "extends CheckButton
 
 
-func _toggled(button_pressed: bool) -> void:
-	BotServer.autonomy = button_pressed
+func _input(event):
+	if event.is_action_pressed(\"change_autonomy\"):
+		BotServer.autonomy = not BotServer.autonomy
 "
 
 [sub_resource type="GDScript" id=3]
@@ -32,6 +36,19 @@ func _ready():
 
 func _update_delay(delay: int):
 	text = str(delay) + \" ms\"
+"
+
+[sub_resource type="GDScript" id=4]
+script/source = "extends Label
+
+
+func _on_Camera_camera_lock_changed(val):
+	if val:
+		text = \"Camera Locked\"
+		set(\"custom_colors/font_color\", Color.red)
+	else:
+		text = \"Camera Unlocked\"
+		set(\"custom_colors/font_color\", Color.green)
 "
 
 [node name="Spatial" type="Spatial"]
@@ -79,8 +96,53 @@ text = "Autonomy Bit:"
 margin_left = 96.0
 margin_right = 172.0
 margin_bottom = 40.0
+focus_mode = 0
 pressed = true
-script = SubResource( 2 )
+script = SubResource( 5 )
+
+[node name="ViewportContainer" type="ViewportContainer" parent="LeftHUD"]
+margin_top = 62.0
+margin_right = 505.0
+margin_bottom = 262.0
+
+[node name="Viewport" type="Viewport" parent="LeftHUD/ViewportContainer"]
+size = Vector2( 200, 200 )
+own_world = true
+transparent_bg = true
+handle_input_locally = false
+render_target_update_mode = 3
+
+[node name="Spatial" type="Spatial" parent="LeftHUD/ViewportContainer/Viewport"]
+transform = Transform( -4.37114e-08, -1, -4.37114e-08, 0, -4.37114e-08, 1, -1, 4.37114e-08, 1.91069e-15, 0, 0, 0 )
+
+[node name="Camera" type="Camera" parent="LeftHUD/ViewportContainer/Viewport/Spatial"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.275 )
+projection = 1
+size = 0.32
+
+[node name="PositionGizmo" parent="LeftHUD/ViewportContainer/Viewport" instance=ExtResource( 4 )]
+
+[node name="ViewportContainer2" type="ViewportContainer" parent="LeftHUD"]
+margin_top = 266.0
+margin_right = 505.0
+margin_bottom = 466.0
+
+[node name="Viewport" type="Viewport" parent="LeftHUD/ViewportContainer2"]
+size = Vector2( 200, 200 )
+own_world = true
+transparent_bg = true
+handle_input_locally = false
+render_target_update_mode = 3
+
+[node name="Spatial" type="Spatial" parent="LeftHUD/ViewportContainer2/Viewport"]
+transform = Transform( -4.37114e-08, -1, -4.37114e-08, 0, -4.37114e-08, 1, -1, 4.37114e-08, 1.91069e-15, 0, 0, 0 )
+
+[node name="Camera" type="Camera" parent="LeftHUD/ViewportContainer2/Viewport/Spatial"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.275 )
+projection = 1
+size = 0.32
+
+[node name="RotationGizmo" parent="LeftHUD/ViewportContainer2/Viewport" instance=ExtResource( 5 )]
 
 [node name="RightHUD" type="VBoxContainer" parent="."]
 anchor_left = 0.5
@@ -130,6 +192,15 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
+[node name="CameraLock" type="Label" parent="RightHUD"]
+margin_top = 36.0
+margin_right = 505.0
+margin_bottom = 50.0
+custom_colors/font_color = Color( 1, 0, 0, 1 )
+text = "Camera Locked"
+align = 2
+script = SubResource( 4 )
+
 [node name="Box" type="Spatial" parent="."]
 
 [node name="Bot" parent="Box" instance=ExtResource( 2 )]
@@ -144,3 +215,16 @@ depth = 6.8
 
 [node name="Camera" type="Camera" parent="."]
 transform = Transform( -4.37114e-08, -1, -4.37114e-08, 0, -4.37114e-08, 1, -1, 4.37114e-08, 1.91069e-15, 0, 5, -3.4 )
+script = ExtResource( 1 )
+
+[node name="RemoteTransform" type="RemoteTransform" parent="Camera"]
+remote_path = NodePath("../../LeftHUD/ViewportContainer/Viewport/Spatial")
+update_position = false
+update_scale = false
+
+[node name="RemoteTransform2" type="RemoteTransform" parent="Camera"]
+remote_path = NodePath("../../LeftHUD/ViewportContainer2/Viewport/Spatial")
+update_position = false
+update_scale = false
+
+[connection signal="camera_lock_changed" from="Camera" to="RightHUD/CameraLock" method="_on_Camera_camera_lock_changed"]

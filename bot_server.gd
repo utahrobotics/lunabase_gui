@@ -57,7 +57,6 @@ func _ready():
 	var err := udp.listen(PORT_SERVER)
 	if err != 0:
 		set_process(false)
-		set_process_input(false)
 		print("ERROR CODE STARTING UDP SERVER: " + str(err))
 		return
 	print("UDP SERVER ACTIVE")
@@ -127,18 +126,12 @@ func _process(_delta):
 
 func _input(event):
 	# TODO Add controller input
-	if event.is_action_pressed("change_autonomy"):
-		set_autonomy(true)
-		
-	elif event.is_action_released("change_autonomy"):
-		set_autonomy(false)
-		
-	elif event is InputEventJoypadMotion:
+	if event is InputEventJoypadMotion:
 		if event.axis == JOY_AXIS_0 or event.axis == JOY_AXIS_1:
 			bot.put_packet(to_json({LEFT_STICK: [Input.get_joy_axis(0, JOY_AXIS_0), Input.get_joy_axis(0, JOY_AXIS_1)]}).to_utf8())
 			
 		elif event.axis == JOY_AXIS_2 or event.axis == JOY_AXIS_3:
-			bot.put_packet(to_json({LEFT_STICK: [Input.get_joy_axis(0, JOY_AXIS_2), Input.get_joy_axis(0, JOY_AXIS_3)]}).to_utf8())
+			bot.put_packet(to_json({RIGHT_STICK: [Input.get_joy_axis(0, JOY_AXIS_2), Input.get_joy_axis(0, JOY_AXIS_3)]}).to_utf8())
 		
 		return
 	
