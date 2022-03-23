@@ -16,13 +16,17 @@ func _handle_bot_data(parsed: Dictionary) -> void:
 	text = parsed[BotServer.AUTONOMY_STAGE].capitalize()
 "
 
-[sub_resource type="GDScript" id=5]
+[sub_resource type="GDScript" id=2]
 script/source = "extends CheckButton
 
 
 func _input(event):
 	if event.is_action_pressed(\"change_autonomy\"):
 		BotServer.autonomy = not BotServer.autonomy
+
+
+func _on_pressed():
+	BotServer.autonomy = not BotServer.autonomy
 "
 
 [sub_resource type="GDScript" id=3]
@@ -98,7 +102,7 @@ margin_right = 172.0
 margin_bottom = 40.0
 focus_mode = 0
 pressed = true
-script = SubResource( 5 )
+script = SubResource( 2 )
 
 [node name="ViewportContainer" type="ViewportContainer" parent="LeftHUD"]
 margin_top = 62.0
@@ -227,4 +231,10 @@ remote_path = NodePath("../../LeftHUD/ViewportContainer2/Viewport/Spatial")
 update_position = false
 update_scale = false
 
+[node name="DirectionalLight" type="DirectionalLight" parent="."]
+transform = Transform( 0.45809, -0.504121, 0.732131, -0.847733, -4.84499e-08, 0.530422, -0.267397, -0.863633, -0.42736, 0.279014, 2.4613, 0 )
+light_energy = 0.3
+directional_shadow_mode = 1
+
+[connection signal="pressed" from="LeftHUD/HBoxContainer2/CheckButton" to="LeftHUD/HBoxContainer2/CheckButton" method="_on_pressed"]
 [connection signal="camera_lock_changed" from="Camera" to="RightHUD/CameraLock" method="_on_Camera_camera_lock_changed"]

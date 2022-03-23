@@ -10,12 +10,12 @@ enum {
 	COST_MAP,
 	REQUEST_COST_MAP,
 	AUTONOMY_BIT,
-	RIGHT_STICK,
-	LEFT_STICK
+	TARGET_ARM_ANGLE
 }
 
 signal packet_received(delta)
 
+const DEADZONE := 0.05
 const PORT_SERVER := 4242
 const LOG_FILENAME := "LUNABOT.LOG"
 
@@ -40,16 +40,15 @@ func set_autonomy(bit: bool) -> void:
 		print("BOT IS NOT CONNECTED, CANNOT CHANGE AUTONOMY STATE")
 		return
 	# warning-ignore:return_value_discarded
-	bot.put_packet(to_json({AUTONOMY_BIT: bit}).to_utf8())
+#	bot.put_packet(to_json({AUTONOMY_BIT: bit}).to_utf8())
 	autonomy = bit
-	set_process_input(bit)
+	set_process_input(not bit)
 	logs[AUTONOMY_BIT].append([get_runtime(), bit])
 	
 	if bit:
 		print("BOT IS FULLY AUTONOMOUS")
 		return
 	print("BOT IS AWAITING INPUT")
-	
 
 
 func _ready():
@@ -71,7 +70,7 @@ func _process(_delta):
 	udp.poll()
 	if udp.is_connection_available():
 		var peer := udp.take_connection()
-
+		
 		if peer.get_packet_error() != 0:
 			prints("Packet received from", peer.get_packet_ip(), "but there was error code:", peer.get_packet_error())
 			return
@@ -125,20 +124,45 @@ func _process(_delta):
 
 
 func _input(event):
-	# TODO Add controller input
-	if event is InputEventJoypadMotion:
-		if event.axis == JOY_AXIS_0 or event.axis == JOY_AXIS_1:
-			bot.put_packet(to_json({LEFT_STICK: [Input.get_joy_axis(0, JOY_AXIS_0), Input.get_joy_axis(0, JOY_AXIS_1)]}).to_utf8())
-			
-		elif event.axis == JOY_AXIS_2 or event.axis == JOY_AXIS_3:
-			bot.put_packet(to_json({RIGHT_STICK: [Input.get_joy_axis(0, JOY_AXIS_2), Input.get_joy_axis(0, JOY_AXIS_3)]}).to_utf8())
-		
-		return
-	
-	elif not event is InputEventJoypadButton:
-		return
-	
-	bot.put_packet(to_json({event.button_index: event.pressed}).to_utf8())
+	if (event is InputEventJoypadMotion and abs(event.axis_value) >= DEADZONE) or \
+		event is InputEventJoypadButton:
+		var err := bot.put_packet(to_json(_get_controller_state()).to_ascii())
+		if err != OK:
+			push_error("Faced error code " + str(err) + "while sending input data!")
+
+
+func _get_joy_axis(device: int, axis: int) -> float:
+	var value := Input.get_joy_axis(device, axis)
+	if abs(value) < DEADZONE:
+		return 0.0
+	return value
+
+
+func _get_controller_state():
+	return {
+		"axes": [
+			_get_joy_axis(0, JOY_AXIS_0), _get_joy_axis(0, JOY_AXIS_1),
+			_get_joy_axis(0, JOY_AXIS_2), _get_joy_axis(0, JOY_AXIS_3),
+			_get_joy_axis(0, JOY_AXIS_6),
+			_get_joy_axis(0, JOY_AXIS_7)
+		],
+		"buttons": [
+			Input.is_joy_button_pressed(0, JOY_DPAD_LEFT),
+			Input.is_joy_button_pressed(0, JOY_DPAD_RIGHT),
+			Input.is_joy_button_pressed(0, JOY_DPAD_UP),
+			Input.is_joy_button_pressed(0, JOY_DPAD_DOWN),
+			Input.is_joy_button_pressed(0, JOY_XBOX_X),
+			Input.is_joy_button_pressed(0, JOY_XBOX_B),
+			Input.is_joy_button_pressed(0, JOY_XBOX_Y),
+			Input.is_joy_button_pressed(0, JOY_XBOX_A),
+			Input.is_joy_button_pressed(0, JOY_XBOX_X),
+			Input.is_joy_button_pressed(0, JOY_XBOX_B),
+			Input.is_joy_button_pressed(0, JOY_XBOX_Y),
+			Input.is_joy_button_pressed(0, JOY_XBOX_A),
+			Input.is_joy_button_pressed(0, JOY_L),
+			Input.is_joy_button_pressed(0, JOY_R),
+		]
+	}
 
 
 func _exit_tree():
