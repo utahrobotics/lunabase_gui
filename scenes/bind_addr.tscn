@@ -10,10 +10,6 @@ onready var multicast_addr_in: LineEdit = $VBoxContainer/LineEdit3
 onready var multicast_port_in: LineEdit = $VBoxContainer/LineEdit4
 
 
-func _ready():
-	print(IP.get_local_interfaces())
-
-
 func check_inputs():
 	if bind_addr_in.text.is_valid_ip_address() and \\
 	bind_port_in.text.is_valid_integer() and \\
@@ -35,6 +31,16 @@ script/source = "extends LineEdit
 
 
 signal valid_input
+
+
+func _ready():
+	for interface in IP.get_local_interfaces():
+		var type : String = interface[\"friendly\"].to_lower()
+		if type == \"wifi\" or type == \"wi-fi\":
+			for addr in interface[\"addresses\"]:
+				if addr.count(\".\") == 3:
+					text = addr
+					return
 
 
 func _on_LineEdit_text_entered(new_text: String):
@@ -96,6 +102,7 @@ margin_left = 437.0
 margin_top = 189.0
 margin_right = 587.0
 margin_bottom = 411.0
+alignment = 1
 
 [node name="Label" type="Label" parent="VBoxContainer"]
 margin_right = 150.0
@@ -108,7 +115,6 @@ margin_top = 18.0
 margin_right = 150.0
 margin_bottom = 42.0
 rect_min_size = Vector2( 150, 0 )
-text = "10.96.81.84"
 align = 1
 script = SubResource( 1 )
 
@@ -174,7 +180,7 @@ margin_top = 198.0
 margin_right = 150.0
 margin_bottom = 222.0
 rect_min_size = Vector2( 100, 0 )
-text = "42424"
+text = "42420"
 align = 1
 script = SubResource( 4 )
 

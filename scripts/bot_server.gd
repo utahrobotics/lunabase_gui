@@ -3,6 +3,7 @@ extends Node
 
 # TODO Add PS4 control enums
 enum {
+	REQUEST_TERMINATE,
 	ODOMETRY,
 	ARM_ANGLE,
 	AUTONOMY_STAGE,
@@ -16,20 +17,11 @@ enum {
 signal packet_received(delta)
 
 const DEADZONE := 0.05
-const LOG_FILENAME := "LUNABOT.LOG"
 const BROADCAST_DELAY := 1.0
 
 var receiver := PacketPeerUDP.new()
 var bot: PacketPeerUDP
 var broadcaster := PacketPeerUDP.new()
-#var logs := {
-#	ODOMETRY: [],
-#	ARM_ANGLE: [],
-#	AUTONOMY_STAGE: [],
-#	AUTONOMY_BIT: [],
-#	PATHING: [],
-#	COST_MAP: []
-#}
 #var autonomy := true setget set_autonomy
 
 var _last_packet_time := OS.get_system_time_msecs()
@@ -75,7 +67,6 @@ func start_brodcasting(addr: String, port: int) -> int:
 	if interface_name.empty():
 		return ERR_CANT_RESOLVE
 	
-	print(interface_name)
 	var err := broadcaster.join_multicast_group(addr, interface_name)
 	
 	if err != OK:
@@ -100,6 +91,7 @@ func start_listening(addr: String, port: int) -> int:
 	bind_addr = addr
 	bind_port = port
 	set_process_input(true)
+	listening = true
 	return OK
 
 
@@ -109,6 +101,7 @@ func _process(delta):
 			broadcast_timer += delta
 		else:
 			broadcast_timer = 0
+			# warning-ignore:return_value_discarded
 			broadcaster.put_packet((bind_addr + ":" + str(bind_port)).to_utf8())
 		
 	if not listening: return
@@ -132,9 +125,9 @@ func _process(delta):
 		broadcasting = false
 	
 	match msg[0]:
-		0:
+		REQUEST_TERMINATE:
 			print("Bot has requested to terminate")
-		1:
+		ODOMETRY:
 			# Pass data to rust module to deserialize
 			pass
 		_:
@@ -164,8 +157,6 @@ func _process(delta):
 #
 #			_:
 #				prints("Received unrecognized enum:", key)
-#
-#		logs[key].append([get_runtime(), data])
 
 
 func _input(event):
@@ -208,13 +199,6 @@ func _get_controller_state():
 			Input.is_joy_button_pressed(0, JOY_R),
 		]
 	}
-
-
-#func _exit_tree():
-#	var log_file := File.new()
-#	# warning-ignore:return_value_discarded
-#	log_file.open(LOG_FILENAME, File.WRITE)
-#	log_file.store_string(to_json(logs))
 
 
 func get_runtime() -> int:
