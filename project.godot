@@ -51,6 +51,7 @@ config/icon="res://icon.png"
 [autoload]
 
 BotServer="*res://scripts/bot_server.gd"
+Serde="*res://gdnatives/serde.gdns"
 
 [input]
 

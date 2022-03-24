@@ -124,12 +124,21 @@ func _process(delta):
 			return
 		broadcasting = false
 	
-	match msg[0]:
+	var header := msg[0]
+	msg.remove(0)
+	match header:
 		REQUEST_TERMINATE:
 			print("Bot has requested to terminate")
 		ODOMETRY:
 			# Pass data to rust module to deserialize
-			pass
+			get_tree().root.propagate_call("_handle_odometry", [Odometry.new(
+				Serde.deserialize_vector3(msg.subarray(0, 3)),
+				Serde.deserialize_vector3(msg.subarray(4, 7)),
+				Serde.deserialize_vector3(msg.subarray(8, 11)),
+				Serde.deserialize_vector3(msg.subarray(12, 15))
+			)])
+		ARM_ANGLE:
+			get_tree().root.propagate_call("_handle_arm_angle", [Serde.deserialize_f32(msg)])
 		_:
 			push_error("Received unrecognized header: " + str(msg[0]))
 	
@@ -203,17 +212,3 @@ func _get_controller_state():
 
 func get_runtime() -> int:
 	return OS.get_system_time_secs() - start_time
-
-
-static func array_to_vector(arr: Array):
-	if len(arr) == 3:
-		return Vector3(arr[0], arr[1], arr[2])
-	assert(len(arr) == 2)
-	return Vector2(arr[0], arr[1])
-
-
-static func vector_to_array(vec) -> Array:
-	if typeof(vec) == TYPE_VECTOR3:
-		return [vec.x, vec.y, vec.z]
-	assert(typeof(vec) == TYPE_VECTOR2)
-	return [vec.x, vec.y]

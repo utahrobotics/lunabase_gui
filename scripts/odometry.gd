@@ -7,8 +7,8 @@ var linear_velocity: Vector3
 var angular_velocity: Vector3
 
 
-func _init(odometry_data: Array):
+func _init(rotation: Vector3, origin: Vector3, lin_vel: Vector3, ang_vel: Vector3):
 	# rotation, origin, lin_vel, ang_vel
-	transform = Transform(Basis(BotServer.array_to_vector(odometry_data[0])), BotServer.array_to_vector(odometry_data[1]))
-	linear_velocity = BotServer.array_to_vector(odometry_data[2])
-	angular_velocity = BotServer.array_to_vector(odometry_data[3])
+	transform = Transform(Basis(rotation), origin)
+	linear_velocity = lin_vel
+	angular_velocity = ang_vel
