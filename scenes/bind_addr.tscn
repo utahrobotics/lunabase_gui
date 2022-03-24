@@ -1,0 +1,187 @@
+[gd_scene load_steps=6 format=2]
+
+[sub_resource type="GDScript" id=5]
+script/source = "extends CenterContainer
+
+
+onready var bind_addr_in: LineEdit = $VBoxContainer/LineEdit
+onready var bind_port_in: LineEdit = $VBoxContainer/LineEdit2
+onready var multicast_addr_in: LineEdit = $VBoxContainer/LineEdit3
+onready var multicast_port_in: LineEdit = $VBoxContainer/LineEdit4
+
+
+func _ready():
+	print(IP.get_local_interfaces())
+
+
+func check_inputs():
+	if bind_addr_in.text.is_valid_ip_address() and \\
+	bind_port_in.text.is_valid_integer() and \\
+	multicast_addr_in.text.is_valid_ip_address() and \\
+	multicast_port_in.text.is_valid_integer():
+		var err := BotServer.start_listening(bind_addr_in.text, int(bind_port_in.text))
+		if err != OK:
+			push_error(\"Error code: \" + str(err) + \" while trying to set up listener\")
+			return
+		err = BotServer.start_brodcasting(multicast_addr_in.text, int(multicast_port_in.text))
+		if err != OK:
+			push_error(\"Error code: \" + str(err) + \" while trying to set up broadcaster\")
+			return
+		print(\"Success!\")
+"
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends LineEdit
+
+
+signal valid_input
+
+
+func _on_LineEdit_text_entered(new_text: String):
+	if not new_text.is_valid_ip_address():
+		push_error(new_text + \" is not a valid IP address!\")
+		return
+	emit_signal(\"valid_input\")
+"
+
+[sub_resource type="GDScript" id=2]
+script/source = "extends LineEdit
+
+
+signal valid_input
+
+
+func _on_LineEdit_text_entered(new_text: String):
+	if not new_text.is_valid_integer():
+		push_error(new_text + \" is not a valid integer!\")
+		return
+	emit_signal(\"valid_input\")
+"
+
+[sub_resource type="GDScript" id=3]
+script/source = "extends LineEdit
+
+
+signal valid_input
+
+
+func _on_LineEdit_text_entered(new_text: String):
+	if not new_text.is_valid_ip_address():
+		push_error(new_text + \" is not a valid IP address!\")
+		return
+	emit_signal(\"valid_input\")
+"
+
+[sub_resource type="GDScript" id=4]
+script/source = "extends LineEdit
+
+
+signal valid_input
+
+
+func _on_LineEdit_text_entered(new_text: String):
+	if not new_text.is_valid_integer():
+		push_error(new_text + \" is not a valid integer!\")
+		return
+	emit_signal(\"valid_input\")
+"
+
+[node name="Control" type="CenterContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = SubResource( 5 )
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+margin_left = 437.0
+margin_top = 189.0
+margin_right = 587.0
+margin_bottom = 411.0
+
+[node name="Label" type="Label" parent="VBoxContainer"]
+margin_right = 150.0
+margin_bottom = 14.0
+text = "Bind Address"
+align = 1
+
+[node name="LineEdit" type="LineEdit" parent="VBoxContainer"]
+margin_top = 18.0
+margin_right = 150.0
+margin_bottom = 42.0
+rect_min_size = Vector2( 150, 0 )
+text = "10.96.81.84"
+align = 1
+script = SubResource( 1 )
+
+[node name="Control" type="Control" parent="VBoxContainer"]
+margin_top = 46.0
+margin_right = 150.0
+margin_bottom = 56.0
+rect_min_size = Vector2( 0, 10 )
+
+[node name="Label2" type="Label" parent="VBoxContainer"]
+margin_top = 60.0
+margin_right = 150.0
+margin_bottom = 74.0
+text = "Port"
+align = 1
+
+[node name="LineEdit2" type="LineEdit" parent="VBoxContainer"]
+margin_top = 78.0
+margin_right = 150.0
+margin_bottom = 102.0
+rect_min_size = Vector2( 100, 0 )
+text = "42424"
+align = 1
+script = SubResource( 2 )
+
+[node name="Control2" type="Control" parent="VBoxContainer"]
+margin_top = 106.0
+margin_right = 150.0
+margin_bottom = 116.0
+rect_min_size = Vector2( 0, 10 )
+
+[node name="Label3" type="Label" parent="VBoxContainer"]
+margin_top = 120.0
+margin_right = 150.0
+margin_bottom = 134.0
+text = "Multicast Address"
+align = 1
+
+[node name="LineEdit3" type="LineEdit" parent="VBoxContainer"]
+margin_top = 138.0
+margin_right = 150.0
+margin_bottom = 162.0
+rect_min_size = Vector2( 100, 0 )
+text = "224.1.1.1"
+align = 1
+script = SubResource( 3 )
+
+[node name="Control3" type="Control" parent="VBoxContainer"]
+margin_top = 166.0
+margin_right = 150.0
+margin_bottom = 176.0
+rect_min_size = Vector2( 0, 10 )
+
+[node name="Label4" type="Label" parent="VBoxContainer"]
+margin_top = 180.0
+margin_right = 150.0
+margin_bottom = 194.0
+text = "Multicast Port"
+align = 1
+
+[node name="LineEdit4" type="LineEdit" parent="VBoxContainer"]
+margin_top = 198.0
+margin_right = 150.0
+margin_bottom = 222.0
+rect_min_size = Vector2( 100, 0 )
+text = "42424"
+align = 1
+script = SubResource( 4 )
+
+[connection signal="text_entered" from="VBoxContainer/LineEdit" to="VBoxContainer/LineEdit" method="_on_LineEdit_text_entered"]
+[connection signal="valid_input" from="VBoxContainer/LineEdit" to="." method="check_inputs"]
+[connection signal="text_entered" from="VBoxContainer/LineEdit2" to="VBoxContainer/LineEdit2" method="_on_LineEdit_text_entered"]
+[connection signal="valid_input" from="VBoxContainer/LineEdit2" to="." method="check_inputs"]
+[connection signal="text_entered" from="VBoxContainer/LineEdit3" to="VBoxContainer/LineEdit3" method="_on_LineEdit_text_entered"]
+[connection signal="valid_input" from="VBoxContainer/LineEdit3" to="." method="check_inputs"]
+[connection signal="text_entered" from="VBoxContainer/LineEdit4" to="VBoxContainer/LineEdit4" method="_on_LineEdit_text_entered"]

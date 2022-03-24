@@ -1,3 +1,4 @@
+# A Control node that hovers over its Spatial parent on screen
 class_name AnchoredControl
 extends Control
 

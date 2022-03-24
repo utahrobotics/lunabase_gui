@@ -12,26 +12,32 @@ _global_script_classes=[ {
 "base": "Control",
 "class": "AnchoredControl",
 "language": "GDScript",
-"path": "res://anchored_control.gd"
+"path": "res://scripts/anchored_control.gd"
 }, {
-"base": "Spatial",
+"base": "MajorAxisPivot",
 "class": "ControllableNode",
 "language": "GDScript",
-"path": "res://controllable_node.gd"
+"path": "res://scripts/controllable_node.gd"
+}, {
+"base": "Spatial",
+"class": "MajorAxisPivot",
+"language": "GDScript",
+"path": "res://scripts/major_axis_pivot.gd"
 }, {
 "base": "Reference",
 "class": "Odometry",
 "language": "GDScript",
-"path": "res://odometry.gd"
+"path": "res://scripts/odometry.gd"
 }, {
 "base": "Line2D",
 "class": "PathingRender",
 "language": "GDScript",
-"path": "res://pathing_render.gd"
+"path": "res://scripts/pathing_render.gd"
 } ]
 _global_script_class_icons={
 "AnchoredControl": "",
 "ControllableNode": "",
+"MajorAxisPivot": "",
 "Odometry": "",
 "PathingRender": ""
 }
@@ -39,12 +45,12 @@ _global_script_class_icons={
 [application]
 
 config/name="lunabotics"
-run/main_scene="res://main.tscn"
+run/main_scene="res://scenes/bind_addr.tscn"
 config/icon="res://icon.png"
 
 [autoload]
 
-BotServer="*res://bot_server.gd"
+BotServer="*res://scripts/bot_server.gd"
 
 [input]
 

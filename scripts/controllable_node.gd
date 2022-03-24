@@ -1,5 +1,5 @@
 class_name ControllableNode
-extends Spatial
+extends MajorAxisPivot
 
 
 signal camera_lock_changed(val)
