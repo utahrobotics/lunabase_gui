@@ -14,6 +14,8 @@ enum {
 	TARGET_ARM_ANGLE
 }
 
+signal odometry_received(odom)
+signal arm_angle_received(angle)
 signal packet_received(delta)
 
 const DEADZONE := 0.05
@@ -131,47 +133,22 @@ func _process(delta):
 			print("Bot has requested to terminate")
 		ODOMETRY:
 			# Pass data to rust module to deserialize
-			get_tree().root.propagate_call("_handle_odometry", [Odometry.new(
-				Serde.deserialize_vector3(msg.subarray(0, 3)),
-				Serde.deserialize_vector3(msg.subarray(4, 7)),
-				Serde.deserialize_vector3(msg.subarray(8, 11)),
-				Serde.deserialize_vector3(msg.subarray(12, 15))
-			)])
+			emit_signal("odometry_received", Odometry.new(
+				Serde.deserialize_quat(msg.subarray(0, 15)),
+				Serde.deserialize_vector3(msg.subarray(16, 27)),
+				Serde.deserialize_vector3(msg.subarray(28, 39)),
+				Serde.deserialize_quat(msg.subarray(40, 55))
+			))
 		ARM_ANGLE:
-			get_tree().root.propagate_call("_handle_arm_angle", [Serde.deserialize_f32(msg)])
+			emit_signal("arm_angle_received", Serde.deserialize_f32(msg))
 		_:
 			push_error("Received unrecognized header: " + str(msg[0]))
-	
-#	var parsed: Dictionary = parse_json(msg)
-#	for key in parsed:
-#		var data = parsed[key]
-#		match int(key):
-#			ODOMETRY:
-#				get_tree().root.propagate_call("_handle_odometry", [Odometry.new(data)])
-#
-#			ARM_ANGLE:
-#				get_tree().root.propagate_call("_handle_arm_angle", [data])
-#
-#			AUTONOMY_STAGE:
-#				get_tree().root.propagate_call("_handle_autonomy_stage", [data])
-#
-#			PATHING:
-#				var path := PoolVector3Array()
-#				for arr in data:
-#					path.append(array_to_vector(arr))
-#				get_tree().root.propagate_call("_handle_pathing", [path])
-#
-#			COST_MAP:
-#				assert(false)
-#
-#			_:
-#				prints("Received unrecognized enum:", key)
 
 
 func _input(event):
 	if (event is InputEventJoypadMotion and abs(event.axis_value) >= DEADZONE) or \
 		event is InputEventJoypadButton:
-		var err := bot.put_packet(to_json(_get_controller_state()).to_ascii())
+		var err := bot.put_packet(_get_controller_state())
 		if err != OK:
 			push_error("Faced error code " + str(err) + "while sending input data!")
 
@@ -183,15 +160,15 @@ func _get_joy_axis(device: int, axis: int) -> float:
 	return value
 
 
-func _get_controller_state():
-	return {
-		"axes": [
-			_get_joy_axis(0, JOY_AXIS_0), _get_joy_axis(0, JOY_AXIS_1),
-			_get_joy_axis(0, JOY_AXIS_2), _get_joy_axis(0, JOY_AXIS_3),
-			_get_joy_axis(0, JOY_AXIS_6),
-			_get_joy_axis(0, JOY_AXIS_7)
-		],
-		"buttons": [
+func _get_controller_state() -> PoolByteArray:
+	return _concat_bytes([
+		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_0)),
+		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_1)),
+		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_2)),
+		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_3)),
+		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_6)),
+		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_7)),
+		Serde.serialize_bool_array([
 			Input.is_joy_button_pressed(0, JOY_DPAD_LEFT),
 			Input.is_joy_button_pressed(0, JOY_DPAD_RIGHT),
 			Input.is_joy_button_pressed(0, JOY_DPAD_UP),
@@ -206,8 +183,39 @@ func _get_controller_state():
 			Input.is_joy_button_pressed(0, JOY_XBOX_A),
 			Input.is_joy_button_pressed(0, JOY_L),
 			Input.is_joy_button_pressed(0, JOY_R),
-		]
-	}
+		])
+	])
+#	return {
+#		"axes": [
+#			_get_joy_axis(0, JOY_AXIS_0), _get_joy_axis(0, JOY_AXIS_1),
+#			_get_joy_axis(0, JOY_AXIS_2), _get_joy_axis(0, JOY_AXIS_3),
+#			_get_joy_axis(0, JOY_AXIS_6),
+#			_get_joy_axis(0, JOY_AXIS_7)
+#		],
+#		"buttons": [
+#			Input.is_joy_button_pressed(0, JOY_DPAD_LEFT),
+#			Input.is_joy_button_pressed(0, JOY_DPAD_RIGHT),
+#			Input.is_joy_button_pressed(0, JOY_DPAD_UP),
+#			Input.is_joy_button_pressed(0, JOY_DPAD_DOWN),
+#			Input.is_joy_button_pressed(0, JOY_XBOX_X),
+#			Input.is_joy_button_pressed(0, JOY_XBOX_B),
+#			Input.is_joy_button_pressed(0, JOY_XBOX_Y),
+#			Input.is_joy_button_pressed(0, JOY_XBOX_A),
+#			Input.is_joy_button_pressed(0, JOY_XBOX_X),
+#			Input.is_joy_button_pressed(0, JOY_XBOX_B),
+#			Input.is_joy_button_pressed(0, JOY_XBOX_Y),
+#			Input.is_joy_button_pressed(0, JOY_XBOX_A),
+#			Input.is_joy_button_pressed(0, JOY_L),
+#			Input.is_joy_button_pressed(0, JOY_R),
+#		]
+#	}
+
+
+static func _concat_bytes(bytes_arr: Array) -> PoolByteArray:
+	var bytes: PoolByteArray = bytes_arr[0]
+	for i in range(1, bytes_arr.size()):
+		bytes.append_array(bytes_arr[i])
+	return bytes
 
 
 func get_runtime() -> int:
