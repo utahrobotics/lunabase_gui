@@ -8,7 +8,9 @@ reloadable=true
 [entry]
 
 Windows.64="res://gdnatives/lunabase_serde.dll"
+X11.64="res://gdnatives/liblunabase_serde.so"
 
 [dependencies]
 
 Windows.64=[  ]
+X11.64=[  ]

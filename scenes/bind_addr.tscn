@@ -10,10 +10,6 @@ onready var multicast_addr_in: LineEdit = $VBoxContainer/LineEdit3
 onready var multicast_port_in: LineEdit = $VBoxContainer/LineEdit4
 
 
-func _ready():
-	print(Serde.deserialize_vector3(Serde.serialize_vector3(Vector3.RIGHT)))
-
-
 func check_inputs():
 	if bind_addr_in.text.is_valid_ip_address() and \\
 	bind_port_in.text.is_valid_integer() and \\
@@ -28,6 +24,9 @@ func check_inputs():
 			push_error(\"Error code: \" + str(err) + \" while trying to set up broadcaster\")
 			return
 		print(\"Success!\")
+	
+	yield(BotServer, \"packet_received\")
+	get_tree().change_scene(\"res://scenes/main.tscn\")
 "
 
 [sub_resource type="GDScript" id=1]
