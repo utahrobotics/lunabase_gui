@@ -21,8 +21,11 @@ signal packet_received(delta)
 const DEADZONE := 0.05
 const BROADCAST_DELAY := 1.0
 
-var receiver := PacketPeerUDP.new()
-var bot: PacketPeerUDP
+var bot_tcp_server := TCP_Server.new()
+var bot_tcp: StreamPeerTCP
+
+var bot_udp := PacketPeerUDP.new()
+
 var broadcaster := PacketPeerUDP.new()
 #var autonomy := true setget set_autonomy
 
@@ -32,27 +35,30 @@ var broadcasting := false
 var listening := false
 var bind_addr: String
 var bind_port: int
-var broadcast_timer := 0.0
+var broadcast_timer := Timer.new()
 
 
 #func set_autonomy(bit: bool) -> void:
-#	if bot == null:
-#		print("BOT IS NOT CONNECTED, CANNOT CHANGE AUTONOMY STATE")
+#	if bot_udp == null:
+#		print("bot_udp IS NOT CONNECTED, CANNOT CHANGE AUTONOMY STATE")
 #		return
 #	# warning-ignore:return_value_discarded
-##	bot.put_packet(to_json({AUTONOMY_BIT: bit}).to_utf8())
+##	bot_udp.put_packet(to_json({AUTONOMY_BIT: bit}).to_utf8())
 #	autonomy = bit
 #	set_process_input(not bit)
 ##	logs[AUTONOMY_BIT].append([get_runtime(), bit])
 #
 #	if bit:
-#		print("BOT IS FULLY AUTONOMOUS")
+#		print("bot_udp IS FULLY AUTONOMOUS")
 #		return
-#	print("BOT IS AWAITING INPUT")
+#	print("bot_udp IS AWAITING INPUT")
 
 
 func _ready():
 	set_process_input(false)
+	add_child(broadcast_timer)
+	broadcast_timer.connect("timeout", self, "broadcast")
+	broadcast_timer.start(BROADCAST_DELAY)
 
 
 func start_brodcasting(addr: String, port: int) -> int:
@@ -86,7 +92,11 @@ func start_brodcasting(addr: String, port: int) -> int:
 func start_listening(addr: String, port: int) -> int:
 	assert(addr.is_valid_ip_address())
 	
-	var err := receiver.listen(port, addr)
+	var err := bot_udp.listen(port, addr)
+	if err != OK:
+		return err
+	
+	err = bot_tcp_server.listen(port + 1, addr)
 	if err != OK:
 		return err
 
@@ -97,18 +107,34 @@ func start_listening(addr: String, port: int) -> int:
 	return OK
 
 
+func broadcast():
+	broadcaster.put_packet((bind_addr + ":" + str(bind_port)).to_utf8())
+
+
 func _process(delta):
-	if broadcasting:
-		if broadcast_timer < BROADCAST_DELAY:
-			broadcast_timer += delta
-		else:
-			broadcast_timer = 0
-			# warning-ignore:return_value_discarded
-			broadcaster.put_packet((bind_addr + ":" + str(bind_port)).to_utf8())
-		
-	if not listening: return
-	if receiver.get_available_packet_count() == 0: return
-	var msg := receiver.get_packet()
+	match bot_udp.get_available_packet_count():
+		0: pass
+		-1:
+			push_error("Got -1")
+		_: _poll_udp()
+	
+	if bot_tcp == null:
+		if bot_tcp_server.is_connection_available():
+			bot_tcp = bot_tcp_server.take_connection()
+			if broadcasting:
+				broadcasting = false
+				broadcast_timer.stop()
+		return
+	
+	match bot_tcp.get_available_bytes():
+		0: pass
+		-1:
+			push_error("Got -1")
+		_: _poll_tcp()
+
+
+func _poll_udp():
+	var msg := bot_udp.get_packet()
 	if msg.size() == 0:
 		push_error("Got 0 length message")
 		return
@@ -117,20 +143,43 @@ func _process(delta):
 	emit_signal("packet_received", current_time - _last_packet_time)
 	_last_packet_time = current_time
 	
-	if bot == null:
-		bot = PacketPeerUDP.new()
-		var err := bot.set_dest_address(receiver.get_packet_ip(), receiver.get_packet_port())
+	if broadcasting:
+		var err := bot_udp.set_dest_address(bot_udp.get_packet_ip(), bot_udp.get_packet_port())
 		if err != OK:
-			push_error("Error code: " + str(err) + " while trying to connect to Lunabot")
-			bot = null
+			push_error("Error code: " + str(err) + " while trying to connect to Lunabot_udp")
 			return
 		broadcasting = false
+		broadcast_timer.stop()
 	
+	_handle_message(msg)
+
+
+func _poll_tcp():
+	var result := bot_tcp.get_data(bot_tcp.get_available_bytes())
+	
+	if result[0] != OK:
+		push_error("Error code: " + str(result[0]) + " while trying to receive TCP packet")
+		return
+	
+	var msg: PoolByteArray = result[1]
+	
+	if msg.size() == 0:
+		push_error("Got 0 length message")
+		return
+	
+	var current_time := OS.get_system_time_msecs()
+	emit_signal("packet_received", current_time - _last_packet_time)
+	_last_packet_time = current_time
+	
+	_handle_message(msg)
+
+
+func _handle_message(msg: PoolByteArray):
 	var header := msg[0]
 	msg.remove(0)
 	match header:
 		REQUEST_TERMINATE:
-			print("Bot has requested to terminate")
+			push_warning("bot_udp has requested to terminate")
 		ODOMETRY:
 			# Pass data to rust module to deserialize
 			emit_signal("odometry_received", Odometry.new(
@@ -148,7 +197,7 @@ func _process(delta):
 func _input(event):
 	if (event is InputEventJoypadMotion and abs(event.axis_value) >= DEADZONE) or \
 		event is InputEventJoypadButton:
-		var err := bot.put_packet(_get_controller_state())
+		var err := bot_udp.put_packet(_get_controller_state())
 		if err != OK:
 			push_error("Faced error code " + str(err) + "while sending input data!")
 
@@ -185,30 +234,6 @@ func _get_controller_state() -> PoolByteArray:
 			Input.is_joy_button_pressed(0, JOY_R),
 		])
 	])
-#	return {
-#		"axes": [
-#			_get_joy_axis(0, JOY_AXIS_0), _get_joy_axis(0, JOY_AXIS_1),
-#			_get_joy_axis(0, JOY_AXIS_2), _get_joy_axis(0, JOY_AXIS_3),
-#			_get_joy_axis(0, JOY_AXIS_6),
-#			_get_joy_axis(0, JOY_AXIS_7)
-#		],
-#		"buttons": [
-#			Input.is_joy_button_pressed(0, JOY_DPAD_LEFT),
-#			Input.is_joy_button_pressed(0, JOY_DPAD_RIGHT),
-#			Input.is_joy_button_pressed(0, JOY_DPAD_UP),
-#			Input.is_joy_button_pressed(0, JOY_DPAD_DOWN),
-#			Input.is_joy_button_pressed(0, JOY_XBOX_X),
-#			Input.is_joy_button_pressed(0, JOY_XBOX_B),
-#			Input.is_joy_button_pressed(0, JOY_XBOX_Y),
-#			Input.is_joy_button_pressed(0, JOY_XBOX_A),
-#			Input.is_joy_button_pressed(0, JOY_XBOX_X),
-#			Input.is_joy_button_pressed(0, JOY_XBOX_B),
-#			Input.is_joy_button_pressed(0, JOY_XBOX_Y),
-#			Input.is_joy_button_pressed(0, JOY_XBOX_A),
-#			Input.is_joy_button_pressed(0, JOY_L),
-#			Input.is_joy_button_pressed(0, JOY_R),
-#		]
-#	}
 
 
 static func _concat_bytes(bytes_arr: Array) -> PoolByteArray:
