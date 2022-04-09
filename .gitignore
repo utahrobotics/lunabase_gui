@@ -5,5 +5,3 @@ export_presets.cfg
 exports/
 *.blend
 *.blend1
-gdnatives/lunabase_serde.dll
-gdnatives/liblunabase_serde.so
