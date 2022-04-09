@@ -10,7 +10,9 @@ enum {
 	PATHING,
 	COST_MAP,
 	REQUEST_COST_MAP,
-	AUTONOMY_BIT,
+	MAKE_AUTONOMOUS,
+	MAKE_MANUAL,
+	ECHO,
 	TARGET_ARM_ANGLE
 }
 
@@ -27,7 +29,6 @@ var bot_tcp: StreamPeerTCP
 var bot_udp := PacketPeerUDP.new()
 
 var broadcaster := PacketPeerUDP.new()
-#var autonomy := true setget set_autonomy
 
 var _last_packet_time := OS.get_system_time_msecs()
 var start_time := OS.get_system_time_secs()
@@ -38,27 +39,11 @@ var bind_port: int
 var broadcast_timer := Timer.new()
 
 
-#func set_autonomy(bit: bool) -> void:
-#	if bot_udp == null:
-#		print("bot_udp IS NOT CONNECTED, CANNOT CHANGE AUTONOMY STATE")
-#		return
-#	# warning-ignore:return_value_discarded
-##	bot_udp.put_packet(to_json({AUTONOMY_BIT: bit}).to_utf8())
-#	autonomy = bit
-#	set_process_input(not bit)
-##	logs[AUTONOMY_BIT].append([get_runtime(), bit])
-#
-#	if bit:
-#		print("bot_udp IS FULLY AUTONOMOUS")
-#		return
-#	print("bot_udp IS AWAITING INPUT")
-
-
 func _ready():
 	set_process_input(false)
+	set_process(false)
 	add_child(broadcast_timer)
 	broadcast_timer.connect("timeout", self, "broadcast")
-	broadcast_timer.start(BROADCAST_DELAY)
 
 
 func start_brodcasting(addr: String, port: int) -> int:
@@ -76,16 +61,15 @@ func start_brodcasting(addr: String, port: int) -> int:
 		return ERR_CANT_RESOLVE
 	
 	var err := broadcaster.join_multicast_group(addr, interface_name)
-	
 	if err != OK:
 		return err
 	
 	err = broadcaster.set_dest_address(addr, port)
-	
 	if err != OK:
 		return err
 	
 	broadcasting = true
+	broadcast_timer.start(BROADCAST_DELAY)
 	return OK 
 
 
@@ -103,12 +87,31 @@ func start_listening(addr: String, port: int) -> int:
 	bind_addr = addr
 	bind_port = port
 	set_process_input(true)
+	set_process(true)
 	listening = true
 	return OK
 
 
 func broadcast():
 	broadcaster.put_packet((bind_addr + ":" + str(bind_port)).to_utf8())
+
+
+func make_autonomous():
+	bot_tcp.put_data(PoolByteArray([MAKE_AUTONOMOUS]))
+	push_warning("Sent MAKE_AUTONOMOUS to bot")
+
+
+func make_manual():
+	bot_tcp.put_data(PoolByteArray([MAKE_MANUAL]))
+	push_warning("Sent MAKE_MANUAL to bot")
+
+
+func _input(event):
+	if (event is InputEventJoypadMotion and abs(event.axis_value) >= DEADZONE) or \
+		event is InputEventJoypadButton:
+		var err := bot_udp.put_packet(_get_controller_state())
+		if err != OK:
+			push_error("Faced error code " + str(err) + "while sending input data!")
 
 
 func _process(delta):
@@ -121,6 +124,7 @@ func _process(delta):
 	if bot_tcp == null:
 		if bot_tcp_server.is_connection_available():
 			bot_tcp = bot_tcp_server.take_connection()
+			bot_tcp.set_no_delay(true)
 			if broadcasting:
 				broadcasting = false
 				broadcast_timer.stop()
@@ -190,16 +194,14 @@ func _handle_message(msg: PoolByteArray):
 			))
 		ARM_ANGLE:
 			emit_signal("arm_angle_received", Serde.deserialize_f32(msg))
+		ECHO:
+			match msg[0]:
+				MAKE_AUTONOMOUS:
+					push_warning("Bot is autonomous")
+				MAKE_MANUAL:
+					push_warning("Bot is manual")
 		_:
 			push_error("Received unrecognized header: " + str(msg[0]))
-
-
-func _input(event):
-	if (event is InputEventJoypadMotion and abs(event.axis_value) >= DEADZONE) or \
-		event is InputEventJoypadButton:
-		var err := bot_udp.put_packet(_get_controller_state())
-		if err != OK:
-			push_error("Faced error code " + str(err) + "while sending input data!")
 
 
 func _get_joy_axis(device: int, axis: int) -> float:
@@ -243,5 +245,5 @@ static func _concat_bytes(bytes_arr: Array) -> PoolByteArray:
 	return bytes
 
 
-func get_runtime() -> int:
+func _get_runtime() -> int:
 	return OS.get_system_time_secs() - start_time

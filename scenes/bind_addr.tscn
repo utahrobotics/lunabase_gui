@@ -23,7 +23,7 @@ func check_inputs():
 		if err != OK:
 			push_error(\"Error code: \" + str(err) + \" while trying to set up broadcaster\")
 			return
-		print(\"Success!\")
+		print(\"Socket setup successful!\")
 	
 	yield(BotServer, \"packet_received\")
 	get_tree().change_scene(\"res://scenes/main.tscn\")
@@ -102,9 +102,9 @@ script = SubResource( 5 )
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 margin_left = 437.0
-margin_top = 189.0
+margin_top = 175.0
 margin_right = 587.0
-margin_bottom = 411.0
+margin_bottom = 425.0
 alignment = 1
 
 [node name="Label" type="Label" parent="VBoxContainer"]
@@ -187,6 +187,19 @@ text = "42420"
 align = 1
 script = SubResource( 4 )
 
+[node name="Control4" type="Control" parent="VBoxContainer"]
+margin_top = 226.0
+margin_right = 150.0
+margin_bottom = 226.0
+
+[node name="Button" type="Button" parent="VBoxContainer"]
+margin_left = 23.0
+margin_top = 230.0
+margin_right = 126.0
+margin_bottom = 250.0
+size_flags_horizontal = 4
+text = "Start Listening"
+
 [connection signal="text_entered" from="VBoxContainer/LineEdit" to="VBoxContainer/LineEdit" method="_on_LineEdit_text_entered"]
 [connection signal="valid_input" from="VBoxContainer/LineEdit" to="." method="check_inputs"]
 [connection signal="text_entered" from="VBoxContainer/LineEdit2" to="VBoxContainer/LineEdit2" method="_on_LineEdit_text_entered"]
@@ -194,3 +207,4 @@ script = SubResource( 4 )
 [connection signal="text_entered" from="VBoxContainer/LineEdit3" to="VBoxContainer/LineEdit3" method="_on_LineEdit_text_entered"]
 [connection signal="valid_input" from="VBoxContainer/LineEdit3" to="." method="check_inputs"]
 [connection signal="text_entered" from="VBoxContainer/LineEdit4" to="VBoxContainer/LineEdit4" method="_on_LineEdit_text_entered"]
+[connection signal="pressed" from="VBoxContainer/Button" to="." method="check_inputs"]
