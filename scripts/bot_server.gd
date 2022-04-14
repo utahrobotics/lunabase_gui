@@ -18,8 +18,9 @@ signal odometry_received(odom)
 signal arm_angle_received(angle)
 signal packet_received(delta)
 
-const DEADZONE := 0.05
+const DEADZONE := 0.1
 const BROADCAST_DELAY := 1.0
+const INPUT_DELAY := 0.05
 
 var bot_tcp_server := TCP_Server.new()
 var bot_tcp: StreamPeerTCP
@@ -36,6 +37,7 @@ var listening := false
 var bind_addr: String
 var bind_port: int
 var broadcast_timer := Timer.new()
+var _input_timer := 0.0
 
 
 func _ready():
@@ -117,14 +119,20 @@ func manual_home(idx: int):
 func _input(event):
 	if (event is InputEventJoypadMotion and abs(event.axis_value) >= DEADZONE) or \
 		event is InputEventJoypadButton:
+		if event is InputEventJoypadMotion and _input_timer > 0: return
+		_input_timer = INPUT_DELAY
 		if event.is_action_pressed("end_manual_home"): emit_signal("manual_home_complete")
 		
-		var err := bot_udp.put_packet(_get_controller_state())
+		var msg := _get_controller_state()
+		msg.insert(0, JOY_INPUT)
+		var err := bot_udp.put_packet(msg)
 		if err != OK:
-			push_error("Faced error code " + str(err) + "while sending input data!")
+			push_error("Faced error code " + str(err) + " while sending input data!")
 
 
 func _process(delta):
+	if _input_timer > 0:
+		_input_timer -= delta
 	match bot_udp.get_available_packet_count():
 		0: pass
 		-1:
@@ -157,13 +165,14 @@ func _poll_udp():
 	emit_signal("packet_received", current_time - _last_packet_time)
 	_last_packet_time = current_time
 	
-	if broadcasting:
+	if msg.get_string_from_utf8() == "hello":
 		var err := bot_udp.set_dest_address(bot_udp.get_packet_ip(), bot_udp.get_packet_port())
-		if err != OK:
-			push_error("Error code: " + str(err) + " while trying to connect to Lunabot_udp")
-			return
-		broadcasting = false
-		broadcast_timer.stop()
+		if broadcasting:
+			if err != OK:
+				push_error("Error code: " + str(err) + " while trying to connect to Lunabot_udp")
+				return
+			broadcasting = false
+			broadcast_timer.stop()
 	
 	_handle_message(msg)
 
@@ -226,20 +235,26 @@ func _get_controller_state() -> PoolByteArray:
 		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_0)),
 		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_1)),
 		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_2)),
-		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_3)),
 		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_6)),
 		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_7)),
+		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_3)),
+		int(Input.is_joy_button_pressed(0, JOY_DPAD_RIGHT)) - int(Input.is_joy_button_pressed(0, JOY_DPAD_LEFT)),
+		int(Input.is_joy_button_pressed(0, JOY_DPAD_UP)) - int(Input.is_joy_button_pressed(0, JOY_DPAD_DOWN)),
 		Serde.serialize_bool_array([
-			Input.is_joy_button_pressed(0, JOY_DPAD_LEFT),
-			Input.is_joy_button_pressed(0, JOY_DPAD_RIGHT),
-			Input.is_joy_button_pressed(0, JOY_DPAD_UP),
-			Input.is_joy_button_pressed(0, JOY_DPAD_DOWN),
-			Input.is_joy_button_pressed(0, JOY_SONY_CIRCLE),
-			Input.is_joy_button_pressed(0, JOY_SONY_X),
 			Input.is_joy_button_pressed(0, JOY_SONY_SQUARE),
+			Input.is_joy_button_pressed(0, JOY_SONY_X),
+			Input.is_joy_button_pressed(0, JOY_SONY_CIRCLE),
 			Input.is_joy_button_pressed(0, JOY_SONY_TRIANGLE),
 			Input.is_joy_button_pressed(0, JOY_L),
 			Input.is_joy_button_pressed(0, JOY_R),
+			Input.is_joy_button_pressed(0, JOY_L2),
+			Input.is_joy_button_pressed(0, JOY_R2),
+			Input.is_joy_button_pressed(0, JOY_SELECT),
+			Input.is_joy_button_pressed(0, JOY_START),
+#			false, 		# lef stick
+#			false,		# right stick
+#			false,		# unknown
+#			false		# unknown
 		])
 	])
 

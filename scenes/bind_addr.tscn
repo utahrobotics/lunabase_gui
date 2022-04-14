@@ -118,6 +118,7 @@ margin_top = 18.0
 margin_right = 150.0
 margin_bottom = 42.0
 rect_min_size = Vector2( 150, 0 )
+text = "127.0.0.1"
 align = 1
 script = SubResource( 1 )
 
