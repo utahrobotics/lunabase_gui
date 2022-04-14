@@ -4,13 +4,28 @@
 script/source = "extends CenterContainer
 
 
+var _connecting := false
+
 onready var bind_addr_in: LineEdit = $VBoxContainer/LineEdit
 onready var bind_port_in: LineEdit = $VBoxContainer/LineEdit2
 onready var multicast_addr_in: LineEdit = $VBoxContainer/LineEdit3
 onready var multicast_port_in: LineEdit = $VBoxContainer/LineEdit4
+onready var button: Button = $VBoxContainer/Button
 
 
-func check_inputs():
+func _ready():
+	yield(BotServer, \"packet_received\")
+	get_tree().change_scene(\"res://scenes/main.tscn\")
+
+
+func _on_pressed():
+	if _connecting:
+		button.text = \"Start Connection\"
+		BotServer.reset_connection()
+		_connecting = false
+		print(\"Socket reset succesful!\")
+		return
+	
 	if bind_addr_in.text.is_valid_ip_address() and \\
 	bind_port_in.text.is_valid_integer() and \\
 	multicast_addr_in.text.is_valid_ip_address() and \\
@@ -23,10 +38,9 @@ func check_inputs():
 		if err != OK:
 			push_error(\"Error code: \" + str(err) + \" while trying to set up broadcaster\")
 			return
+		_connecting = true
+		button.text = \"Stop Connection\"
 		print(\"Socket setup successful!\")
-	
-	yield(BotServer, \"packet_received\")
-	get_tree().change_scene(\"res://scenes/main.tscn\")
 "
 
 [sub_resource type="GDScript" id=1]
@@ -194,12 +208,12 @@ margin_right = 150.0
 margin_bottom = 226.0
 
 [node name="Button" type="Button" parent="VBoxContainer"]
-margin_left = 23.0
+margin_left = 16.0
 margin_top = 230.0
-margin_right = 126.0
+margin_right = 133.0
 margin_bottom = 250.0
 size_flags_horizontal = 4
-text = "Start Listening"
+text = "Start Connection"
 
 [connection signal="text_entered" from="VBoxContainer/LineEdit" to="VBoxContainer/LineEdit" method="_on_LineEdit_text_entered"]
 [connection signal="valid_input" from="VBoxContainer/LineEdit" to="." method="check_inputs"]
@@ -208,4 +222,4 @@ text = "Start Listening"
 [connection signal="text_entered" from="VBoxContainer/LineEdit3" to="VBoxContainer/LineEdit3" method="_on_LineEdit_text_entered"]
 [connection signal="valid_input" from="VBoxContainer/LineEdit3" to="." method="check_inputs"]
 [connection signal="text_entered" from="VBoxContainer/LineEdit4" to="VBoxContainer/LineEdit4" method="_on_LineEdit_text_entered"]
-[connection signal="pressed" from="VBoxContainer/Button" to="." method="check_inputs"]
+[connection signal="pressed" from="VBoxContainer/Button" to="." method="_on_pressed"]

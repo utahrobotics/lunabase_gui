@@ -20,7 +20,7 @@ signal packet_received(delta)
 
 const DEADZONE := 0.1
 const BROADCAST_DELAY := 1.0
-const INPUT_DELAY := 0.05
+const INPUT_RATE := 20
 
 var bot_tcp_server := TCP_Server.new()
 var bot_tcp: StreamPeerTCP
@@ -87,10 +87,21 @@ func start_listening(addr: String, port: int) -> int:
 
 	bind_addr = addr
 	bind_port = port
-	set_process_input(true)
 	set_process(true)
 	listening = true
 	return OK
+
+
+func reset_connection():
+	broadcaster = PacketPeerUDP.new()
+	bot_udp = PacketPeerUDP.new()
+	bot_tcp = null
+	bot_tcp_server = TCP_Server.new()
+	broadcasting = false
+	listening = false
+	set_process(false)
+	set_process_input(false)
+	broadcast_timer.stop()
 
 
 func broadcast():
@@ -120,7 +131,7 @@ func _input(event):
 	if (event is InputEventJoypadMotion and abs(event.axis_value) >= DEADZONE) or \
 		event is InputEventJoypadButton:
 		if event is InputEventJoypadMotion and _input_timer > 0: return
-		_input_timer = INPUT_DELAY
+		_input_timer = 1.0 / INPUT_RATE
 		if event.is_action_pressed("end_manual_home"): emit_signal("manual_home_complete")
 		
 		var msg := _get_controller_state()
@@ -166,6 +177,7 @@ func _poll_udp():
 	_last_packet_time = current_time
 	
 	if msg.get_string_from_utf8() == "hello":
+		set_process_input(true)
 		var err := bot_udp.set_dest_address(bot_udp.get_packet_ip(), bot_udp.get_packet_port())
 		if broadcasting:
 			if err != OK:
@@ -178,6 +190,12 @@ func _poll_udp():
 
 
 func _poll_tcp():
+	if not bot_tcp.is_connected_to_host():
+		push_error("Lost connection to lunabot!")
+		get_tree().change_scene("res://scenes/bind_addr.tscn")
+		reset_connection()
+		return
+	
 	var result := bot_tcp.get_data(bot_tcp.get_available_bytes())
 	
 	if result[0] != OK:
@@ -251,7 +269,7 @@ func _get_controller_state() -> PoolByteArray:
 			Input.is_joy_button_pressed(0, JOY_R2),
 			Input.is_joy_button_pressed(0, JOY_SELECT),
 			Input.is_joy_button_pressed(0, JOY_START),
-#			false, 		# lef stick
+#			false, 		# left stick
 #			false,		# right stick
 #			false,		# unknown
 #			false		# unknown
