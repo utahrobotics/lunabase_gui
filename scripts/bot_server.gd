@@ -6,16 +6,14 @@ enum {
 	REQUEST_TERMINATE,
 	ODOMETRY,
 	ARM_ANGLE,
-	AUTONOMY_STAGE,
-	PATHING,
-	COST_MAP,
-	REQUEST_COST_MAP,
+	JOY_INPUT,
 	MAKE_AUTONOMOUS,
 	MAKE_MANUAL,
 	ECHO,
-	TARGET_ARM_ANGLE
+	MANUAL_HOME			# Calibrates motors
 }
 
+signal manual_home_complete
 signal odometry_received(odom)
 signal arm_angle_received(angle)
 signal packet_received(delta)
@@ -30,6 +28,7 @@ var bot_udp := PacketPeerUDP.new()
 
 var broadcaster := PacketPeerUDP.new()
 
+var _manually_homing := false
 var _last_packet_time := OS.get_system_time_msecs()
 var start_time := OS.get_system_time_secs()
 var broadcasting := false
@@ -97,18 +96,29 @@ func broadcast():
 
 
 func make_autonomous():
-	bot_tcp.put_data(PoolByteArray([MAKE_AUTONOMOUS]))
+	bot_tcp.put_data(_make_byte(MAKE_AUTONOMOUS))
 	push_warning("Sent MAKE_AUTONOMOUS to bot")
 
 
 func make_manual():
-	bot_tcp.put_data(PoolByteArray([MAKE_MANUAL]))
+	bot_tcp.put_data(_make_byte(MAKE_MANUAL))
 	push_warning("Sent MAKE_MANUAL to bot")
+
+
+func manual_home(idx: int):
+	_manually_homing = true
+	var data := _make_byte(MANUAL_HOME)
+	assert(idx >= 0 and idx < 256)
+	data.append(idx)
+	bot_tcp.put_data(data)
+	push_warning("Sent MANUAL_HOME to bot")
 
 
 func _input(event):
 	if (event is InputEventJoypadMotion and abs(event.axis_value) >= DEADZONE) or \
 		event is InputEventJoypadButton:
+		if event.is_action_pressed("end_manual_home"): emit_signal("manual_home_complete")
+		
 		var err := bot_udp.put_packet(_get_controller_state())
 		if err != OK:
 			push_error("Faced error code " + str(err) + "while sending input data!")
@@ -224,14 +234,10 @@ func _get_controller_state() -> PoolByteArray:
 			Input.is_joy_button_pressed(0, JOY_DPAD_RIGHT),
 			Input.is_joy_button_pressed(0, JOY_DPAD_UP),
 			Input.is_joy_button_pressed(0, JOY_DPAD_DOWN),
-			Input.is_joy_button_pressed(0, JOY_XBOX_X),
-			Input.is_joy_button_pressed(0, JOY_XBOX_B),
-			Input.is_joy_button_pressed(0, JOY_XBOX_Y),
-			Input.is_joy_button_pressed(0, JOY_XBOX_A),
-			Input.is_joy_button_pressed(0, JOY_XBOX_X),
-			Input.is_joy_button_pressed(0, JOY_XBOX_B),
-			Input.is_joy_button_pressed(0, JOY_XBOX_Y),
-			Input.is_joy_button_pressed(0, JOY_XBOX_A),
+			Input.is_joy_button_pressed(0, JOY_SONY_CIRCLE),
+			Input.is_joy_button_pressed(0, JOY_SONY_X),
+			Input.is_joy_button_pressed(0, JOY_SONY_SQUARE),
+			Input.is_joy_button_pressed(0, JOY_SONY_TRIANGLE),
 			Input.is_joy_button_pressed(0, JOY_L),
 			Input.is_joy_button_pressed(0, JOY_R),
 		])
@@ -243,6 +249,11 @@ static func _concat_bytes(bytes_arr: Array) -> PoolByteArray:
 	for i in range(1, bytes_arr.size()):
 		bytes.append_array(bytes_arr[i])
 	return bytes
+
+
+func _make_byte(num: int) -> PoolByteArray:
+	assert(num >= 0 and num < 256)
+	return PoolByteArray([num])
 
 
 func _get_runtime() -> int:

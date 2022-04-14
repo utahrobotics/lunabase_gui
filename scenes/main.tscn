@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=2]
+[gd_scene load_steps=11 format=2]
 
 [ext_resource path="res://scripts/controllable_node.gd" type="Script" id=1]
 [ext_resource path="res://scenes/bot.tscn" type="PackedScene" id=2]
@@ -53,6 +53,23 @@ func _on_Camera_camera_lock_changed(val):
 	else:
 		text = \"Camera Unlocked\"
 		set(\"custom_colors/font_color\", Color.green)
+"
+
+[sub_resource type="GDScript" id=5]
+script/source = "extends Button
+
+
+onready var line_edit: LineEdit = $\"../LineEdit\"
+
+
+func _on_ManualHome_pressed():
+	if not line_edit.text.is_valid_integer(): return
+	disabled = true
+	BotServer.manual_home(int(line_edit.text))
+
+
+func _ready():
+	BotServer.connect(\"manual_home_complete\", self, \"set_disabled\", [false])
 "
 
 [node name="Spatial" type="Spatial"]
@@ -155,9 +172,6 @@ anchor_bottom = 1.0
 margin_top = 7.0
 margin_right = -7.0
 margin_bottom = 39.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
 [node name="PacketDelay" type="VBoxContainer" parent="RightHUD"]
 margin_right = 505.0
@@ -205,6 +219,33 @@ text = "Camera Locked"
 align = 2
 script = SubResource( 4 )
 
+[node name="Control" type="Control" parent="RightHUD"]
+margin_top = 54.0
+margin_right = 505.0
+margin_bottom = 84.0
+rect_min_size = Vector2( 0, 30 )
+
+[node name="HBoxContainer" type="HBoxContainer" parent="RightHUD"]
+margin_top = 88.0
+margin_right = 505.0
+margin_bottom = 112.0
+alignment = 2
+
+[node name="ManualHome" type="Button" parent="RightHUD/HBoxContainer"]
+margin_left = 342.0
+margin_right = 443.0
+margin_bottom = 24.0
+size_flags_horizontal = 8
+text = "Manual Home"
+script = SubResource( 5 )
+
+[node name="LineEdit" type="LineEdit" parent="RightHUD/HBoxContainer"]
+margin_left = 447.0
+margin_right = 505.0
+margin_bottom = 24.0
+align = 2
+max_length = 1
+
 [node name="Box" type="Spatial" parent="."]
 
 [node name="Bot" parent="Box" instance=ExtResource( 2 )]
@@ -239,4 +280,5 @@ light_energy = 0.3
 directional_shadow_mode = 1
 
 [connection signal="pressed" from="LeftHUD/HBoxContainer2/CheckButton" to="LeftHUD/HBoxContainer2/CheckButton" method="_on_pressed"]
+[connection signal="pressed" from="RightHUD/HBoxContainer/ManualHome" to="RightHUD/HBoxContainer/ManualHome" method="_on_ManualHome_pressed"]
 [connection signal="camera_lock_changed" from="Camera" to="RightHUD/CameraLock" method="_on_Camera_camera_lock_changed"]
