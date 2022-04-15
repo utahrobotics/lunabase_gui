@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=2]
+[gd_scene load_steps=10 format=2]
 
 [ext_resource path="res://scripts/controllable_node.gd" type="Script" id=1]
 [ext_resource path="res://scenes/bot.tscn" type="PackedScene" id=2]
@@ -14,19 +14,6 @@ func _handle_bot_data(parsed: Dictionary) -> void:
 	if not BotServer.AUTONOMY_STAGE in parsed:
 		return
 	text = parsed[BotServer.AUTONOMY_STAGE].capitalize()
-"
-
-[sub_resource type="GDScript" id=2]
-script/source = "extends CheckButton
-
-
-#func _input(event):
-#	if event.is_action_pressed(\"change_autonomy\"):
-#		BotServer.autonomy = not BotServer.autonomy
-#
-#
-#func _on_pressed():
-#	BotServer.autonomy = not BotServer.autonomy
 "
 
 [sub_resource type="GDScript" id=3]
@@ -82,9 +69,6 @@ anchor_right = 0.5
 anchor_bottom = 1.0
 margin_left = 7.0
 margin_top = 7.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
 [node name="HBoxContainer" type="HBoxContainer" parent="LeftHUD"]
 margin_right = 505.0
@@ -102,29 +86,10 @@ margin_bottom = 14.0
 text = "MANUAL"
 script = SubResource( 1 )
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="LeftHUD"]
+[node name="ViewportContainer" type="ViewportContainer" parent="LeftHUD"]
 margin_top = 18.0
 margin_right = 505.0
-margin_bottom = 58.0
-
-[node name="Label" type="Label" parent="LeftHUD/HBoxContainer2"]
-margin_top = 13.0
-margin_right = 92.0
-margin_bottom = 27.0
-text = "Autonomy Bit:"
-
-[node name="CheckButton" type="CheckButton" parent="LeftHUD/HBoxContainer2"]
-margin_left = 96.0
-margin_right = 172.0
-margin_bottom = 40.0
-focus_mode = 0
-pressed = true
-script = SubResource( 2 )
-
-[node name="ViewportContainer" type="ViewportContainer" parent="LeftHUD"]
-margin_top = 62.0
-margin_right = 505.0
-margin_bottom = 262.0
+margin_bottom = 218.0
 
 [node name="Viewport" type="Viewport" parent="LeftHUD/ViewportContainer"]
 size = Vector2( 200, 200 )
@@ -134,7 +99,7 @@ handle_input_locally = false
 render_target_update_mode = 3
 
 [node name="Spatial" type="Spatial" parent="LeftHUD/ViewportContainer/Viewport"]
-transform = Transform( -4.37114e-08, -1, -4.37114e-08, 0, -4.37114e-08, 1, -1, 4.37114e-08, 1.91069e-15, 0, 0, 0 )
+transform = Transform( -0.34202, -0.719846, 0.604023, 0, 0.642788, 0.766044, -0.939693, 0.262003, -0.219846, 0, 0, 0 )
 
 [node name="Camera" type="Camera" parent="LeftHUD/ViewportContainer/Viewport/Spatial"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.275 )
@@ -144,9 +109,9 @@ size = 0.32
 [node name="PositionGizmo" parent="LeftHUD/ViewportContainer/Viewport" instance=ExtResource( 4 )]
 
 [node name="ViewportContainer2" type="ViewportContainer" parent="LeftHUD"]
-margin_top = 266.0
+margin_top = 222.0
 margin_right = 505.0
-margin_bottom = 466.0
+margin_bottom = 422.0
 
 [node name="Viewport" type="Viewport" parent="LeftHUD/ViewportContainer2"]
 size = Vector2( 200, 200 )
@@ -156,7 +121,7 @@ handle_input_locally = false
 render_target_update_mode = 3
 
 [node name="Spatial" type="Spatial" parent="LeftHUD/ViewportContainer2/Viewport"]
-transform = Transform( -4.37114e-08, -1, -4.37114e-08, 0, -4.37114e-08, 1, -1, 4.37114e-08, 1.91069e-15, 0, 0, 0 )
+transform = Transform( -0.34202, -0.719846, 0.604023, 0, 0.642788, 0.766044, -0.939693, 0.262003, -0.219846, 0, 0, 0 )
 
 [node name="Camera" type="Camera" parent="LeftHUD/ViewportContainer2/Viewport/Spatial"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.275 )
@@ -259,7 +224,7 @@ height = 1.0
 depth = 6.8
 
 [node name="Camera" type="Camera" parent="."]
-transform = Transform( -4.37114e-08, -1, -4.37114e-08, 0, -4.37114e-08, 1, -1, 4.37114e-08, 1.91069e-15, 0, 5, -3.4 )
+transform = Transform( -0.34202, -0.719846, 0.604023, 0, 0.642788, 0.766044, -0.939693, 0.262003, -0.219846, 3, 4, -4.8 )
 script = ExtResource( 1 )
 max_major_rotation_degrees = 0.0
 offload_excess_major_rotation = false
@@ -279,6 +244,5 @@ transform = Transform( 0.45809, -0.504121, 0.732131, -0.847733, -4.84499e-08, 0.
 light_energy = 0.3
 directional_shadow_mode = 1
 
-[connection signal="pressed" from="LeftHUD/HBoxContainer2/CheckButton" to="LeftHUD/HBoxContainer2/CheckButton" method="_on_pressed"]
 [connection signal="pressed" from="RightHUD/HBoxContainer/ManualHome" to="RightHUD/HBoxContainer/ManualHome" method="_on_ManualHome_pressed"]
 [connection signal="camera_lock_changed" from="Camera" to="RightHUD/CameraLock" method="_on_Camera_camera_lock_changed"]

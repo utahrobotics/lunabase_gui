@@ -1,31 +1,19 @@
-[gd_scene load_steps=9 format=2]
+[gd_scene load_steps=10 format=2]
 
 [ext_resource path="res://scripts/anchored_control.gd" type="Script" id=1]
 [ext_resource path="res://scenes/rotation_gizmo.glb" type="PackedScene" id=2]
 
-[sub_resource type="SpatialMaterial" id=1]
-albedo_color = Color( 0, 0, 0, 1 )
-emission_enabled = true
-emission = Color( 0, 1, 0, 1 )
-emission_energy = 1.0
-emission_operator = 0
-emission_on_uv2 = false
+[sub_resource type="GDScript" id=7]
+script/source = "extends ZSorter
 
-[sub_resource type="SpatialMaterial" id=2]
-albedo_color = Color( 0, 0, 0, 1 )
-emission_enabled = true
-emission = Color( 1, 0, 0, 1 )
-emission_energy = 1.0
-emission_operator = 0
-emission_on_uv2 = false
 
-[sub_resource type="SpatialMaterial" id=3]
-albedo_color = Color( 0, 0, 0, 1 )
-emission_enabled = true
-emission = Color( 0, 0, 1, 1 )
-emission_energy = 1.0
-emission_operator = 0
-emission_on_uv2 = false
+func _ready():
+	spatials = [
+		[$Spatial, $CanvasLayer/Label],
+		[$Spatial2, $CanvasLayer/Label2],
+		[$Spatial3, $CanvasLayer/Label3]
+	]
+"
 
 [sub_resource type="GDScript" id=4]
 script/source = "extends Label
@@ -51,7 +39,68 @@ func _handle_odometry(odometry: Odometry) -> void:
 	text = str(odometry.angular_velocity.y)
 "
 
+[sub_resource type="SpatialMaterial" id=1]
+albedo_color = Color( 0, 0, 0, 1 )
+emission_enabled = true
+emission = Color( 0, 1, 0, 1 )
+emission_energy = 1.0
+emission_operator = 0
+emission_on_uv2 = false
+
+[sub_resource type="SpatialMaterial" id=2]
+albedo_color = Color( 0, 0, 0, 1 )
+emission_enabled = true
+emission = Color( 1, 0, 0, 1 )
+emission_energy = 1.0
+emission_operator = 0
+emission_on_uv2 = false
+
+[sub_resource type="SpatialMaterial" id=3]
+albedo_color = Color( 0, 0, 0, 1 )
+emission_enabled = true
+emission = Color( 0, 0, 1, 1 )
+emission_energy = 1.0
+emission_operator = 0
+emission_on_uv2 = false
+
 [node name="RotationGizmo" type="Spatial"]
+script = SubResource( 7 )
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Label" type="Label" parent="CanvasLayer"]
+margin_right = 20.0
+margin_bottom = 14.0
+size_flags_horizontal = 2
+text = "0.0"
+script = SubResource( 4 )
+
+[node name="Panel" type="Panel" parent="CanvasLayer/Label"]
+show_behind_parent = true
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Label2" type="Label" parent="CanvasLayer"]
+margin_right = 20.0
+margin_bottom = 14.0
+text = "0.0"
+script = SubResource( 5 )
+
+[node name="Panel" type="Panel" parent="CanvasLayer/Label2"]
+show_behind_parent = true
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Label3" type="Label" parent="CanvasLayer"]
+margin_right = 20.0
+margin_bottom = 14.0
+text = "0.0"
+script = SubResource( 6 )
+
+[node name="Panel" type="Panel" parent="CanvasLayer/Label3"]
+show_behind_parent = true
+anchor_right = 1.0
+anchor_bottom = 1.0
 
 [node name="rotation_gizmo" parent="." instance=ExtResource( 2 )]
 transform = Transform( 0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0, 0 )
@@ -72,15 +121,7 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0752437, 0.0655021, 0 )
 margin_right = 40.0
 margin_bottom = 40.0
 script = ExtResource( 1 )
-
-[node name="Label" type="Label" parent="Spatial/AnchoredControl"]
-margin_right = 40.0
-margin_bottom = 14.0
-text = "0.0"
-script = SubResource( 4 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
+_target_path = NodePath("../../CanvasLayer/Label")
 
 [node name="Spatial2" type="Spatial" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0684143, 0.0720324 )
@@ -89,15 +130,7 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0684143, 0.0720324 )
 margin_right = 40.0
 margin_bottom = 40.0
 script = ExtResource( 1 )
-
-[node name="Label" type="Label" parent="Spatial2/AnchoredControl"]
-margin_right = 40.0
-margin_bottom = 14.0
-text = "0.0"
-script = SubResource( 5 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
+_target_path = NodePath("../../CanvasLayer/Label2")
 
 [node name="Spatial3" type="Spatial" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0716301, 0, 0.0663829 )
@@ -106,14 +139,6 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0716301, 0, 0.0663829 )
 margin_right = 40.0
 margin_bottom = 40.0
 script = ExtResource( 1 )
-
-[node name="Label" type="Label" parent="Spatial3/AnchoredControl"]
-margin_right = 40.0
-margin_bottom = 40.0
-text = "0.0"
-script = SubResource( 6 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
+_target_path = NodePath("../../CanvasLayer/Label3")
 
 [editable path="rotation_gizmo"]

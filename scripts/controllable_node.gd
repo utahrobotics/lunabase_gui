@@ -33,8 +33,8 @@ func _input(event):
 		return
 	
 	if event is InputEventMouseMotion:
-		rotation.x -= event.relative.y * mouse_sensitivity
-		rotation.y -= event.relative.x * mouse_sensitivity
+		rotate_about_minor(- event.relative.y * mouse_sensitivity)
+		rotate_about_major(- event.relative.x * mouse_sensitivity)
 	
 	_movement_vector = Vector3(
 		Input.get_action_strength("camera_right") - Input.get_action_strength("camera_left"),

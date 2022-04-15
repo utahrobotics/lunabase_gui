@@ -8,8 +8,8 @@ export var max_major_rotation_degrees := 20.0
 export var max_minor_rotation_degrees := 80.0
 export var offload_excess_major_rotation := true
 
-var _major_angle := 0.0
-var _minor_angle := 0.0
+onready var _major_angle := 0.0
+onready var _minor_angle := 0.0
 
 
 func rotate_about_major(angle: float):
