@@ -15,6 +15,7 @@ onready var button: Button = $VBoxContainer/Button
 
 func _ready():
 	yield(BotServer, \"packet_received\")
+	# warning-ignore:return_value_discarded
 	get_tree().change_scene(\"res://scenes/main.tscn\")
 
 
