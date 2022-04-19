@@ -14,6 +14,8 @@ enum {
 	CONNECTED,
 	PING,
 	ROSOUT,					# Rosout msg from bot, should be a security level and a ready-to-print string
+	SEND_ROSOUT,
+	DONT_SEND_ROSOUT,
 }
 
 signal manual_home_complete
@@ -22,6 +24,7 @@ signal arm_angle(angle)
 signal autonomy_changed
 signal rosout(level, msg)
 signal packet_received(delta)
+signal is_sending_rosout
 
 const DEADZONE := 0.1
 const BROADCAST_DELAY := 0.5
@@ -44,11 +47,16 @@ var _manually_homing := false
 var _last_packet_time := OS.get_system_time_msecs()
 var _broadcast_timer := Timer.new()
 var _is_autonomous := true
+var _is_sending_rosout := false
 var _input_timer := Timer.new()
 
 
 func get_is_autonomous() -> bool:
 	return _is_autonomous
+
+
+func get_is_sending_rosout() -> bool:
+	return _is_sending_rosout
 
 
 func _ready():
@@ -144,6 +152,16 @@ func manual_home(idx: int):
 	# warning-ignore:return_value_discarded
 	bot_tcp.put_data(data)
 	push_warning("Sent MANUAL_HOME to bot")
+
+
+func send_rosout():
+	bot_tcp.put_data(_make_byte(SEND_ROSOUT))
+	push_warning("Sent SEND_ROSOUT to Lunabot")
+
+
+func dont_send_rosout():
+	bot_tcp.put_data(_make_byte(DONT_SEND_ROSOUT))
+	push_warning("Sent DONT_SEND_ROSOUT to Lunabot")
 
 
 func _input(event):
@@ -265,6 +283,20 @@ func _handle_message(msg: PoolByteArray):
 					_is_autonomous = false
 					emit_signal("autonomy_changed")
 					push_warning("Bot is manual")
+				SEND_ROSOUT:
+					if _is_sending_rosout:
+						push_warning("Bot echoed SEND_ROSOUT but we already know it is...")
+						return
+					_is_sending_rosout = true
+					emit_signal("is_sending_rosout")
+					push_warning("Bot is sending rosout")
+				DONT_SEND_ROSOUT:
+					if not _is_sending_rosout:
+						push_warning("Bot echoed DONT_SEND_ROSOUT but we already know it is...")
+						return
+					_is_sending_rosout = false
+					emit_signal("is_sending_rosout")
+					push_warning("Bot is not sending rosout")
 				_:
 					push_error("Unrecognized echo header: " + str(msg[0]))
 		ROSOUT:

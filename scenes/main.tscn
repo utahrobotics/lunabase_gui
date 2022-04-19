@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=2]
+[gd_scene load_steps=15 format=2]
 
 [ext_resource path="res://scripts/controllable_node.gd" type="Script" id=1]
 [ext_resource path="res://scenes/bot.tscn" type="PackedScene" id=2]
@@ -89,6 +89,33 @@ func _on_ManualHome_pressed():
 func _ready():
 	# warning-ignore:return_value_discarded
 	BotServer.connect(\"manual_home_complete\", self, \"set_disabled\", [false])
+"
+
+[sub_resource type="GDScript" id=10]
+script/source = "extends Button
+
+
+onready var label: Label = $\"../Label\"
+
+
+func _ready():
+	BotServer.connect(\"is_sending_rosout\", self, \"_on_is_sending_rosout\")
+
+
+func _on_is_sending_rosout():
+	if BotServer.is_sending_rosout():
+		text = \"Disable Rosout\"
+		label.text = \" Receiving Rosout\"
+	else:
+		text = \"Enable Rosout\"
+		label.text = \" Not Receiving Rosout\"
+
+
+func _on_Button_pressed():
+	if BotServer.is_sending_rosout():
+		BotServer.dont_send_rosout()
+	else:
+		BotServer.send_rosout()
 "
 
 [sub_resource type="GDScript" id=9]
@@ -339,9 +366,29 @@ margin_right = 505.0
 margin_bottom = 136.0
 rect_min_size = Vector2( 0, 20 )
 
+[node name="HBoxContainer2" type="HBoxContainer" parent="RightHUD"]
+margin_top = 140.0
+margin_right = 505.0
+margin_bottom = 160.0
+alignment = 2
+
+[node name="Button" type="Button" parent="RightHUD/HBoxContainer2"]
+margin_left = 255.0
+margin_right = 357.0
+margin_bottom = 20.0
+text = "Enable Rosout"
+script = SubResource( 10 )
+
+[node name="Label" type="Label" parent="RightHUD/HBoxContainer2"]
+margin_left = 361.0
+margin_top = 3.0
+margin_right = 505.0
+margin_bottom = 17.0
+text = "  Not Receiving Rosout"
+
 [node name="VBoxContainer" type="VBoxContainer" parent="RightHUD"]
 margin_left = 155.0
-margin_top = 140.0
+margin_top = 164.0
 margin_right = 505.0
 margin_bottom = 586.0
 rect_min_size = Vector2( 350, 0 )
@@ -434,5 +481,6 @@ directional_shadow_mode = 1
 
 [connection signal="pressed" from="LeftHUD/Button" to="LeftHUD/Button" method="_on_Button_pressed"]
 [connection signal="pressed" from="RightHUD/HBoxContainer/ManualHome" to="RightHUD/HBoxContainer/ManualHome" method="_on_ManualHome_pressed"]
+[connection signal="pressed" from="RightHUD/HBoxContainer2/Button" to="RightHUD/HBoxContainer2/Button" method="_on_Button_pressed"]
 [connection signal="pressed" from="RightHUD/VBoxContainer/HBoxContainer/Button" to="RightHUD/VBoxContainer/HBoxContainer/Button" method="_on_Button_pressed"]
 [connection signal="camera_lock_changed" from="Camera" to="RightHUD/CameraLock" method="_on_Camera_camera_lock_changed"]

@@ -59,6 +59,11 @@ config/icon="res://icon.png"
 BotServer="*res://scripts/bot_server.gd"
 Serde="*res://gdnatives/serde.gdns"
 
+[display]
+
+window/stretch/mode="2d"
+window/stretch/aspect="keep_height"
+
 [input]
 
 change_autonomy={
@@ -120,4 +125,5 @@ common/enable_pause_aware_picking=true
 [rendering]
 
 quality/driver/fallback_to_gles2=true
+quality/filters/msaa=2
 environment/default_environment="res://default_env.tres"

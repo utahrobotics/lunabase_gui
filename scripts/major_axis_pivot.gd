@@ -2,14 +2,12 @@ class_name MajorAxisPivot
 extends Spatial
 
 
-export var major_axis := Vector3.UP
-export var minor_axis := Vector3.RIGHT
 export var max_major_rotation_degrees := 20.0
-export var max_minor_rotation_degrees := 80.0
+export var max_minor_rotation_degrees := 90.0
 export var offload_excess_major_rotation := true
 
-onready var _major_angle := 0.0
-onready var _minor_angle := 0.0
+onready var _major_angle := rotation.y
+onready var _minor_angle := rotation.x
 
 
 func rotate_about_major(angle: float):
@@ -22,9 +20,9 @@ func rotate_about_major(angle: float):
 		angle -= excess
 		
 		if offload_excess_major_rotation:
-			get_parent().rotate_object_local(major_axis, excess)
+			get_parent().rotate_object_local(Vector3.UP, excess)
 	
-	rotate(_get_parent_basis().xform(major_axis), angle)
+	rotate(_get_parent_basis().y, angle)
 
 
 func rotate_about_minor(angle: float):
@@ -36,7 +34,7 @@ func rotate_about_minor(angle: float):
 		_minor_angle -= excess
 		angle -= excess
 	
-	rotate_object_local(minor_axis, angle)
+	rotate_object_local(Vector3.RIGHT, angle)
 
 
 func _get_parent_basis() -> Basis:
