@@ -263,7 +263,7 @@ func _handle_message(msg: PoolByteArray):
 				Serde.deserialize_quat(msg.subarray(0, 15)),
 				Serde.deserialize_vector3(msg.subarray(16, 27)),
 				Serde.deserialize_vector3(msg.subarray(28, 39)),
-				Serde.deserialize_quat(msg.subarray(40, 55))
+				Serde.deserialize_vector3(msg.subarray(40, 51))
 			))
 		ARM_ANGLE:
 			emit_signal("arm_angle", Serde.deserialize_f32(msg))

@@ -46,6 +46,10 @@ emission_on_uv2 = false
 script/source = "extends Label
 
 
+func _ready():
+	BotServer.connect(\"odometry\", self, \"_handle_odometry\")
+
+
 func _handle_odometry(odometry: Odometry) -> void:
 	text = str(odometry.linear_velocity.z)
 "
@@ -54,12 +58,20 @@ func _handle_odometry(odometry: Odometry) -> void:
 script/source = "extends Label
 
 
+func _ready():
+	BotServer.connect(\"odometry\", self, \"_handle_odometry\")
+
+
 func _handle_odometry(odometry: Odometry) -> void:
 	text = str(odometry.linear_velocity.x)
 "
 
 [sub_resource type="GDScript" id=7]
 script/source = "extends Label
+
+
+func _ready():
+	BotServer.connect(\"odometry\", self, \"_handle_odometry\")
 
 
 func _handle_odometry(odometry: Odometry) -> void:

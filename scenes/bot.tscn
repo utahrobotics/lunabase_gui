@@ -4,6 +4,10 @@
 script/source = "extends Spatial
 
 
+func _ready():
+	BotServer.connect(\"odometry\", self, \"_handle_odometry\")
+
+
 func _handle_odometry(odometry: Odometry) -> void:
 	transform = odometry.transform
 "
