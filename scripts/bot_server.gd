@@ -50,6 +50,7 @@ var _broadcast_timer := Timer.new()
 var _is_autonomous := true
 var _is_sending_rosout := false
 var _input_timer := Timer.new()
+var _was_in_deadzone := false
 
 
 func get_is_autonomous() -> bool:
@@ -176,9 +177,14 @@ func dont_send_rosout():
 
 
 func _input(event):
-	if (event is InputEventJoypadMotion and abs(event.axis_value) >= DEADZONE) or \
-		event is InputEventJoypadButton:
-		if event is InputEventJoypadMotion and not _input_timer.is_stopped(): return
+	if event is InputEventJoypadMotion or event is InputEventJoypadButton:
+		if event is InputEventJoypadMotion:
+			if not _input_timer.is_stopped(): return
+			if abs(event.axis) <= DEADZONE:
+				event.axis = 0
+				if _was_in_deadzone: return
+				_was_in_deadzone = true
+					
 		_input_timer.start()
 		if event.is_action_pressed("end_manual_home"): emit_signal("manual_home_complete")
 		
@@ -335,7 +341,7 @@ func _get_joy_axis(device: int, axis: int) -> float:
 func _get_controller_state() -> PoolByteArray:
 	return _concat_bytes([
 		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_0)),
-		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_1)),
+		Serde.serialize_f32(- _get_joy_axis(0, JOY_AXIS_1)),
 		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_2)),
 		Serde.serialize_f32(1 - _get_joy_axis(0, JOY_AXIS_6) * 2),
 		Serde.serialize_f32(1 - _get_joy_axis(0, JOY_AXIS_7) * 2),
