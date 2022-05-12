@@ -47,6 +47,7 @@ script/source = "extends Label
 
 
 func _ready():
+	# warning-ignore:return_value_discarded
 	BotServer.connect(\"odometry\", self, \"_handle_odometry\")
 
 
@@ -59,6 +60,7 @@ script/source = "extends Label
 
 
 func _ready():
+	# warning-ignore:return_value_discarded
 	BotServer.connect(\"odometry\", self, \"_handle_odometry\")
 
 
@@ -71,6 +73,7 @@ script/source = "extends Label
 
 
 func _ready():
+	# warning-ignore:return_value_discarded
 	BotServer.connect(\"odometry\", self, \"_handle_odometry\")
 
 

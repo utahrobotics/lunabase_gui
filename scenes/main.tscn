@@ -43,6 +43,7 @@ script/source = "extends Label
 
 
 func _ready():
+	# warning-ignore:return_value_discarded
 	BotServer.connect(\"autonomy_changed\", self, \"_on_autonomy_changed\")
 
 
@@ -65,6 +66,7 @@ onready var label: Label = $\"../Panel/Label\"
 
 
 func _ready():
+	# warning-ignore:return_value_discarded
 	BotServer.connect(\"arm_angle\", self, \"_on_arm_angle\")
 	label.text = \"0°\"
 
@@ -126,6 +128,7 @@ onready var label: Label = $\"../Label\"
 
 
 func _ready():
+	# warning-ignore:return_value_discarded
 	BotServer.connect(\"is_sending_rosout\", self, \"_on_is_sending_rosout\")
 
 
@@ -153,6 +156,7 @@ var count := 0
 
 
 func _ready():
+	# warning-ignore:return_value_discarded
 	BotServer.connect(\"rosout\", self, \"_on_rosout\")
 
 
@@ -199,6 +203,7 @@ enum {
 
 
 func _ready():
+	# warning-ignore:return_value_discarded
 	BotServer.connect(\"rosout\", self, \"_on_rosout\")
 
 

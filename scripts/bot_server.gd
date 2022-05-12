@@ -164,11 +164,13 @@ func manual_home(idx: int):
 
 
 func send_rosout():
+	# warning-ignore:return_value_discarded
 	bot_tcp.put_data(_make_byte(SEND_ROSOUT))
 	push_warning("Sent SEND_ROSOUT to Lunabot")
 
 
 func dont_send_rosout():
+	# warning-ignore:return_value_discarded
 	bot_tcp.put_data(_make_byte(DONT_SEND_ROSOUT))
 	push_warning("Sent DONT_SEND_ROSOUT to Lunabot")
 
