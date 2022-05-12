@@ -16,6 +16,8 @@ func _on_ActionList_item_activated(index: int):
 			BotServer.make_manual()
 		1:
 			BotServer.make_autonomous()		# TODO Improve
+		5:
+			BotServer.dump_action()
 "
 
 [sub_resource type="GDScript" id=6]

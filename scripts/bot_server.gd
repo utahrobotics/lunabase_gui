@@ -16,6 +16,7 @@ enum {
 	ROSOUT,					# Rosout msg from bot, should be a security level and a ready-to-print string
 	SEND_ROSOUT,
 	DONT_SEND_ROSOUT,
+	DUMP_ACTION
 }
 
 signal manual_home_complete
@@ -142,6 +143,14 @@ func make_manual():
 	# warning-ignore:return_value_discarded
 	bot_tcp.put_data(_make_byte(MAKE_MANUAL))
 	push_warning("Sent MAKE_MANUAL to bot")
+
+
+func dump_action():
+	if not _is_autonomous:
+		push_warning("Cannot dump without entering manual control")
+	# warning-ignore:return_value_discarded
+	bot_tcp.put_data(_make_byte(DUMP_ACTION))
+	push_warning("Sent DUMP_ACTION to bot")
 
 
 func manual_home(idx: int):
@@ -320,8 +329,8 @@ func _get_controller_state() -> PoolByteArray:
 		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_0)),
 		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_1)),
 		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_2)),
-		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_6)),
-		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_7)),
+		Serde.serialize_f32(1 - _get_joy_axis(0, JOY_AXIS_6) * 2),
+		Serde.serialize_f32(1 - _get_joy_axis(0, JOY_AXIS_7) * 2),
 		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_3)),
 		Serde.serialize_f32(float(Input.is_joy_button_pressed(0, JOY_DPAD_RIGHT)) - float(Input.is_joy_button_pressed(0, JOY_DPAD_LEFT))),
 		Serde.serialize_f32(float(Input.is_joy_button_pressed(0, JOY_DPAD_UP)) - float(Input.is_joy_button_pressed(0, JOY_DPAD_DOWN))),
