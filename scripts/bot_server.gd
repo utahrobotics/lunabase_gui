@@ -313,6 +313,12 @@ func _handle_message(msg: PoolByteArray):
 			msg.remove(0)
 			var txt := msg.get_string_from_utf8()
 			emit_signal("rosout", level, txt)
+		MAKE_AUTONOMOUS:
+			_is_autonomous = true
+			push_warning("Bot set itself to autonomous!")
+		MAKE_MANUAL:
+			_is_autonomous = false
+			push_warning("Bot set itself to manual!")
 		_:
 			push_error("Received unrecognized header: " + str(header))
 
