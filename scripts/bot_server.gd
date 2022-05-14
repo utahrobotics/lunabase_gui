@@ -16,7 +16,8 @@ enum {
 	ROSOUT,					# Rosout msg from bot, should be a security level and a ready-to-print string
 	SEND_ROSOUT,
 	DONT_SEND_ROSOUT,
-	DUMP_ACTION
+	DUMP_ACTION,
+	FAKE_INIT
 }
 
 signal manual_home_complete
@@ -29,7 +30,7 @@ signal is_sending_rosout
 
 const DEADZONE := 0.1
 const BROADCAST_DELAY := 0.5
-const INPUT_RATE := 20
+const INPUT_RATE := 5
 
 var bot_tcp_server := TCP_Server.new()
 var bot_tcp: StreamPeerTCP
@@ -149,9 +150,19 @@ func make_manual():
 func dump_action():
 	if not _is_autonomous:
 		push_warning("Cannot dump without entering manual control")
+		return
 	# warning-ignore:return_value_discarded
 	bot_tcp.put_data(_make_byte(DUMP_ACTION))
 	push_warning("Sent DUMP_ACTION to bot")
+
+
+func fake_init():
+#	if not _is_autonomous:
+#		push_warning("Cannot fake init without entering manual control")
+#		return
+	# warning-ignore:return_value_discarded
+	bot_tcp.put_data(_make_byte(FAKE_INIT))
+	push_warning("Sent FAKE_INIT to bot")
 
 
 func manual_home(idx: int):
@@ -180,11 +191,12 @@ func _input(event):
 	if event is InputEventJoypadMotion or event is InputEventJoypadButton:
 		if event is InputEventJoypadMotion:
 			if not _input_timer.is_stopped(): return
-			if abs(event.axis) <= DEADZONE:
-				event.axis = 0
-				if _was_in_deadzone: return
-				_was_in_deadzone = true
-					
+#			if abs(event.axis) <= DEADZONE:
+#				if _was_in_deadzone: return
+#				_was_in_deadzone = true
+#			else:
+#				_was_in_deadzone = false
+			
 		_input_timer.start()
 		if event.is_action_pressed("end_manual_home"): emit_signal("manual_home_complete")
 		
@@ -345,7 +357,7 @@ func _get_controller_state() -> PoolByteArray:
 		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_2)),
 		Serde.serialize_f32(1 - _get_joy_axis(0, JOY_AXIS_6) * 2),
 		Serde.serialize_f32(1 - _get_joy_axis(0, JOY_AXIS_7) * 2),
-		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_3)),
+		Serde.serialize_f32(- _get_joy_axis(0, JOY_AXIS_3)),
 		Serde.serialize_f32(float(Input.is_joy_button_pressed(0, JOY_DPAD_RIGHT)) - float(Input.is_joy_button_pressed(0, JOY_DPAD_LEFT))),
 		Serde.serialize_f32(float(Input.is_joy_button_pressed(0, JOY_DPAD_UP)) - float(Input.is_joy_button_pressed(0, JOY_DPAD_DOWN))),
 		Serde.serialize_bool_array([

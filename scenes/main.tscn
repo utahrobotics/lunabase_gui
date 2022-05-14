@@ -18,6 +18,8 @@ func _on_ActionList_item_activated(index: int):
 			BotServer.make_autonomous()		# TODO Improve
 		5:
 			BotServer.dump_action()
+		6:
+			BotServer.fake_init()
 "
 
 [sub_resource type="GDScript" id=6]
@@ -257,10 +259,10 @@ size_flags_vertical = 3
 
 [node name="ActionList" type="ItemList" parent="LeftHUD/CanvasLayer/Control"]
 margin_right = 200.0
-margin_bottom = 117.0
+margin_bottom = 135.0
 rect_min_size = Vector2( 0, 100 )
 size_flags_vertical = 2
-items = [ "Make Fully Manual", null, false, "Make Fully Autonomous", null, false, "Dig", null, false, "Finish Dig", null, false, "Align to Bin", null, false, "Dump", null, false ]
+items = [ "Make Fully Manual", null, false, "Make Fully Autonomous", null, false, "Dig", null, false, "Finish Dig", null, false, "Align to Bin", null, false, "Dump", null, false, "FakeInit", null, false ]
 auto_height = true
 script = SubResource( 13 )
 
