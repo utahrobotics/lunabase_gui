@@ -30,7 +30,7 @@ signal is_sending_rosout
 
 const DEADZONE := 0.1
 const BROADCAST_DELAY := 0.5
-const INPUT_RATE := 5
+const INPUT_RATE := 10
 
 var bot_tcp_server := TCP_Server.new()
 var bot_tcp: StreamPeerTCP
@@ -53,6 +53,8 @@ var _is_sending_rosout := false
 var _input_timer := Timer.new()
 var _was_in_deadzone := false
 
+onready var _last_controller_state := _get_controller_state()
+
 
 func get_is_autonomous() -> bool:
 	return _is_autonomous
@@ -71,6 +73,7 @@ func _ready():
 	add_child(_input_timer)
 	_input_timer.one_shot = true
 	_input_timer.wait_time = 1.0 / INPUT_RATE
+	_input_timer.connect("timeout", self, "_send_controller")
 
 
 func start_brodcasting(addr: String, port: int) -> int:
@@ -188,24 +191,24 @@ func dont_send_rosout():
 
 
 func _input(event):
-	if event is InputEventJoypadMotion or event is InputEventJoypadButton:
-		if event is InputEventJoypadMotion:
-			if not _input_timer.is_stopped(): return
-#			if abs(event.axis) <= DEADZONE:
-#				if _was_in_deadzone: return
-#				_was_in_deadzone = true
-#			else:
-#				_was_in_deadzone = false
-			
-		_input_timer.start()
-		if event.is_action_pressed("end_manual_home"): emit_signal("manual_home_complete")
-		
-		var msg := _get_controller_state()
-		# warning-ignore:return_value_discarded
-		msg.insert(0, JOY_INPUT)
-		var err := bot_udp.put_packet(msg)
-		if err != OK:
-			push_error("Faced error code " + str(err) + " while sending input data!")
+	if event.is_action_pressed("end_manual_home"):
+		emit_signal("manual_home_complete")
+
+
+func _send_controller():
+	_input_timer.start()
+	var msg := _get_controller_state()
+	
+	if msg == _last_controller_state:
+		return
+	
+	_last_controller_state = msg
+#	msg = msg.compress(File.COMPRESSION_GZIP)
+	msg.insert(0, JOY_INPUT)
+	# warning-ignore:return_value_discarded
+	var err := bot_udp.put_packet(msg)
+	if err != OK:
+		push_error("Faced error code " + str(err) + " while sending input data!")
 
 
 func _process(_delta):
@@ -247,14 +250,15 @@ func _poll_udp():
 	_last_packet_time = current_time
 	
 	if msg[0] == CONNECTED:
-		set_process_input(true)
 		var err := bot_udp.set_dest_address(bot_udp.get_packet_ip(), bot_udp.get_packet_port())
+		if err != OK:
+			push_error("Error code: " + str(err) + " while trying to connect to Lunabot_udp")
+			return
 		if broadcasting:
-			if err != OK:
-				push_error("Error code: " + str(err) + " while trying to connect to Lunabot_udp")
-				return
 			broadcasting = false
 			_broadcast_timer.stop()
+		set_process_input(true)
+		_input_timer.connect("timeout", self, "_send_controller")
 		return
 	
 	_handle_message(msg)
@@ -332,6 +336,7 @@ func _handle_message(msg: PoolByteArray):
 			var level := msg[0]
 			msg.remove(0)
 			var txt := msg.get_string_from_utf8()
+#			var txt := msg.decompress_dynamic(-1, File.COMPRESSION_GZIP).get_string_from_utf8()
 			emit_signal("rosout", level, txt)
 		MAKE_AUTONOMOUS:
 			_is_autonomous = true
@@ -347,7 +352,7 @@ func _get_joy_axis(device: int, axis: int) -> float:
 	var value := Input.get_joy_axis(device, axis)
 	if abs(value) < DEADZONE:
 		return 0.0
-	return value
+	return stepify(value, 0.05)
 
 
 func _get_controller_state() -> PoolByteArray:
