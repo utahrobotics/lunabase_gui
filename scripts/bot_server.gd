@@ -1,12 +1,39 @@
 extends Node
 
 
+const JOY_STEPS := 20
+const JOY_BUTTON_ORDER := [
+	JOY_DPAD_LEFT,
+	JOY_DPAD_RIGHT,
+	JOY_DPAD_UP,
+	JOY_DPAD_DOWN,
+	JOY_SONY_SQUARE,
+	JOY_SONY_X,
+	JOY_SONY_CIRCLE,
+	JOY_SONY_TRIANGLE,
+	JOY_L,
+	JOY_R,
+	JOY_L2,
+	JOY_R2,
+	JOY_SELECT,
+	JOY_START
+]
+
+const JOY_AXIS_ORDER := [
+	JOY_AXIS_0,
+	JOY_AXIS_1,
+	JOY_AXIS_2,
+	JOY_AXIS_6,
+	JOY_AXIS_7,
+	JOY_AXIS_3
+]
+
 # TODO Add PS4 control enums
 enum {
 	REQUEST_TERMINATE,
 	ODOMETRY,
 	ARM_ANGLE,
-	JOY_INPUT,
+	JOY_AXIS,
 	MAKE_AUTONOMOUS,
 	MAKE_MANUAL,
 	ECHO,
@@ -17,7 +44,8 @@ enum {
 	SEND_ROSOUT,
 	DONT_SEND_ROSOUT,
 	DUMP_ACTION,
-	FAKE_INIT
+	FAKE_INIT,
+	JOY_BUTTON,
 }
 
 signal manual_home_complete
@@ -52,7 +80,7 @@ var _is_autonomous := true
 var _is_sending_rosout := false
 var _was_in_deadzone := false
 
-onready var _last_controller_state := _get_controller_state()
+var _last_axes := {}
 
 
 func get_is_autonomous() -> bool:
@@ -64,6 +92,7 @@ func get_is_sending_rosout() -> bool:
 
 
 func _ready():
+	assert(JOY_STEPS < 32 and JOY_STEPS > 0)
 	set_process_input(false)
 	set_process(false)
 	add_child(_broadcast_timer)
@@ -189,23 +218,22 @@ func _input(event):
 	if event.is_action_pressed("end_manual_home"):
 		emit_signal("manual_home_complete")
 	
-	if event is InputEventJoypadButton or event is InputEventJoypadMotion:
-		_send_controller()
-
-
-func _send_controller():
-	var msg := _get_controller_state()
+	if event is InputEventJoypadMotion:
+		if not event.axis in JOY_AXIS_ORDER: return
+		var rounded := round(event.axis_value * JOY_STEPS)
+		
+		if event.axis in _last_axes:
+			if rounded == _last_axes[event.axis]: return
+		
+		_last_axes[event.axis] = rounded
+		var byte := JOY_AXIS_ORDER.find(event.axis) * 32 + rounded
+		bot_udp.put_packet(PoolByteArray([JOY_AXIS, byte]))
 	
-	if msg == _last_controller_state:
-		return
-	
-	_last_controller_state = msg
-	msg = msg.compress(File.COMPRESSION_GZIP)
-	msg.insert(0, JOY_INPUT)
-	# warning-ignore:return_value_discarded
-	var err := bot_udp.put_packet(msg)
-	if err != OK:
-		push_error("Faced error code " + str(err) + " while sending input data!")
+	if event is InputEventJoypadButton:
+		if not event.button_index in JOY_BUTTON_ORDER: return
+		var byte := JOY_BUTTON_ORDER.find(event.button_index)
+		if event.pressed: byte += 128
+		bot_udp.put_packet(PoolByteArray([JOY_BUTTON, byte]))
 
 
 func _process(_delta):
@@ -349,35 +377,6 @@ func _get_joy_axis(device: int, axis: int) -> float:
 	if abs(value) < DEADZONE:
 		return 0.0
 	return stepify(value, 0.05)
-
-
-func _get_controller_state() -> PoolByteArray:
-	return _concat_bytes([
-		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_0)),
-		Serde.serialize_f32(- _get_joy_axis(0, JOY_AXIS_1)),
-		Serde.serialize_f32(_get_joy_axis(0, JOY_AXIS_2)),
-		Serde.serialize_f32(1 - _get_joy_axis(0, JOY_AXIS_6) * 2),
-		Serde.serialize_f32(1 - _get_joy_axis(0, JOY_AXIS_7) * 2),
-		Serde.serialize_f32(- _get_joy_axis(0, JOY_AXIS_3)),
-		Serde.serialize_f32(float(Input.is_joy_button_pressed(0, JOY_DPAD_RIGHT)) - float(Input.is_joy_button_pressed(0, JOY_DPAD_LEFT))),
-		Serde.serialize_f32(float(Input.is_joy_button_pressed(0, JOY_DPAD_UP)) - float(Input.is_joy_button_pressed(0, JOY_DPAD_DOWN))),
-		Serde.serialize_bool_array([
-			Input.is_joy_button_pressed(0, JOY_SONY_SQUARE),
-			Input.is_joy_button_pressed(0, JOY_SONY_X),
-			Input.is_joy_button_pressed(0, JOY_SONY_CIRCLE),
-			Input.is_joy_button_pressed(0, JOY_SONY_TRIANGLE),
-			Input.is_joy_button_pressed(0, JOY_L),
-			Input.is_joy_button_pressed(0, JOY_R),
-			Input.is_joy_button_pressed(0, JOY_L2),
-			Input.is_joy_button_pressed(0, JOY_R2),
-			Input.is_joy_button_pressed(0, JOY_SELECT),
-			Input.is_joy_button_pressed(0, JOY_START),
-#			false, 		# left stick
-#			false,		# right stick
-#			false,		# unknown
-#			false		# unknown
-		])
-	])
 
 
 static func _concat_bytes(bytes_arr: Array) -> PoolByteArray:
