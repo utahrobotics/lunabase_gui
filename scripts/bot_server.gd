@@ -227,12 +227,14 @@ func _input(event):
 		
 		_last_axes[event.axis] = rounded
 		var byte := JOY_AXIS_ORDER.find(event.axis) * 32 + rounded
+		# warning-ignore:return_value_discarded
 		bot_udp.put_packet(PoolByteArray([JOY_AXIS, byte]))
 		
 	elif event is InputEventJoypadButton:
 		if not event.button_index in JOY_BUTTON_ORDER: return
 		var byte := JOY_BUTTON_ORDER.find(event.button_index)
 		if event.pressed: byte += 128
+		# warning-ignore:return_value_discarded
 		bot_udp.put_packet(PoolByteArray([JOY_BUTTON, byte]))
 
 
