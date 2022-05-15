@@ -1,7 +1,7 @@
 extends Node
 
 
-const JOY_STEPS := 10
+const JOY_STEPS := 20
 const JOY_BUTTON_ORDER := [
 	JOY_DPAD_RIGHT,
 	JOY_DPAD_LEFT,
@@ -13,8 +13,8 @@ const JOY_BUTTON_ORDER := [
 	JOY_SONY_TRIANGLE,
 	JOY_L,
 	JOY_R,
-	JOY_L2,
-	JOY_R2,
+	-1,
+	-1,
 	JOY_SELECT,
 	JOY_START
 ]
@@ -81,8 +81,8 @@ var _is_sending_rosout := false
 var _was_in_deadzone := false
 
 var _last_axes := {}
-var _pending_joy_event: InputEventJoypadMotion = null
-var _joystick_timer: Timer
+var _pending_joy_events = {}
+var _joy_timer: Timer
 
 
 func get_is_autonomous() -> bool:
@@ -100,8 +100,13 @@ func _ready():
 	add_child(_broadcast_timer)
 	# warning-ignore:return_value_discarded
 	_broadcast_timer.connect("timeout", self, "broadcast")
-	_joystick_timer = Timer.new()
-	_joystick_timer.wait_time = 1.0 / JOY_STEPS
+	
+	_joy_timer = Timer.new()
+	add_child(_joy_timer)
+	_joy_timer.wait_time = 1.0 / JOY_STEPS
+	_joy_timer.connect("timeout", self, "_push_pending_joy")
+	
+#	_joy_timer.start()
 
 
 func start_brodcasting(addr: String, port: int) -> int:
@@ -221,13 +226,11 @@ func dont_send_rosout():
 func _input(event):
 	if event is InputEventJoypadMotion:
 		if not event.axis in JOY_AXIS_ORDER: return
-		event.axis_value = round(event.axis_value * JOY_STEPS)
-		if event.axis in _last_axes:
-			if event.axis_value == _last_axes[event.axis]: return
-		_pending_joy_event = event
+		_pending_joy_events[event.axis] = event.axis_value
 		
 	elif event is InputEventJoypadButton:
 		if not event.button_index in JOY_BUTTON_ORDER: return
+		if event.button_index == JOY_L2 or event.button_index == JOY_R2: return
 		var byte := JOY_BUTTON_ORDER.find(event.button_index)
 		if event.pressed: byte += 128
 		# warning-ignore:return_value_discarded
@@ -238,12 +241,28 @@ func _input(event):
 
 
 func _push_pending_joy():
-	if _pending_joy_event == null: return
-	_last_axes[_pending_joy_event.axis] = _pending_joy_event.axis_value
-	var byte := JOY_AXIS_ORDER.find(_pending_joy_event._pending_joy_event) * 32 + _pending_joy_event.axis_value
+	var payload := PoolByteArray([JOY_AXIS])
+	for axis in _pending_joy_events:
+		var axis_value: float = _pending_joy_events[axis]
+		var order := JOY_AXIS_ORDER.find(axis)
+		
+		if order <= 2 or order == 5:
+			axis_value = (axis_value + 1) / 2
+		assert(axis_value >= 0 and axis_value <= 1)
+		axis_value = round(axis_value * JOY_STEPS)
+		
+		if axis in _last_axes and axis_value == _last_axes[axis]:
+			continue
+		_last_axes[axis] = axis_value
+		
+		var byte := order * 32 + axis_value
+		assert(byte >= 0 and byte <= 255)
+		payload.append(byte)
+	
+	if payload.size() == 1: return
 	# warning-ignore:return_value_discarded
-	bot_udp.put_packet(PoolByteArray([JOY_AXIS, byte]))
-	_pending_joy_event = null
+	bot_udp.put_packet(payload)
+	_pending_joy_events.clear()
 
 
 func _process(_delta):
@@ -293,7 +312,7 @@ func _poll_udp():
 			broadcasting = false
 			_broadcast_timer.stop()
 		set_process_input(true)
-		_joystick_timer.start()
+		_joy_timer.start()
 		return
 	
 	_handle_message(msg)
