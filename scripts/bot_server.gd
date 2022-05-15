@@ -50,7 +50,6 @@ var _last_packet_time := OS.get_system_time_msecs()
 var _broadcast_timer := Timer.new()
 var _is_autonomous := true
 var _is_sending_rosout := false
-var _input_timer := Timer.new()
 var _was_in_deadzone := false
 
 onready var _last_controller_state := _get_controller_state()
@@ -70,10 +69,6 @@ func _ready():
 	add_child(_broadcast_timer)
 	# warning-ignore:return_value_discarded
 	_broadcast_timer.connect("timeout", self, "broadcast")
-	add_child(_input_timer)
-	_input_timer.one_shot = true
-	_input_timer.wait_time = 1.0 / INPUT_RATE
-	_input_timer.connect("timeout", self, "_send_controller")
 
 
 func start_brodcasting(addr: String, port: int) -> int:
@@ -193,17 +188,19 @@ func dont_send_rosout():
 func _input(event):
 	if event.is_action_pressed("end_manual_home"):
 		emit_signal("manual_home_complete")
+	
+	if event is InputEventJoypadButton or event is InputEventJoypadMotion:
+		_send_controller()
 
 
 func _send_controller():
-	_input_timer.start()
 	var msg := _get_controller_state()
 	
 	if msg == _last_controller_state:
 		return
 	
 	_last_controller_state = msg
-#	msg = msg.compress(File.COMPRESSION_GZIP)
+	msg = msg.compress(File.COMPRESSION_GZIP)
 	msg.insert(0, JOY_INPUT)
 	# warning-ignore:return_value_discarded
 	var err := bot_udp.put_packet(msg)
@@ -258,7 +255,6 @@ func _poll_udp():
 			broadcasting = false
 			_broadcast_timer.stop()
 		set_process_input(true)
-		_input_timer.connect("timeout", self, "_send_controller")
 		return
 	
 	_handle_message(msg)
