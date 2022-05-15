@@ -1,7 +1,7 @@
 extends Node
 
 
-const JOY_STEPS := 20
+const JOY_STEPS := 10
 const JOY_BUTTON_ORDER := [
 	JOY_DPAD_RIGHT,
 	JOY_DPAD_LEFT,
@@ -81,6 +81,8 @@ var _is_sending_rosout := false
 var _was_in_deadzone := false
 
 var _last_axes := {}
+var _pending_joy_event: InputEventJoypadMotion = null
+var _joystick_timer: Timer
 
 
 func get_is_autonomous() -> bool:
@@ -98,6 +100,8 @@ func _ready():
 	add_child(_broadcast_timer)
 	# warning-ignore:return_value_discarded
 	_broadcast_timer.connect("timeout", self, "broadcast")
+	_joystick_timer = Timer.new()
+	_joystick_timer.wait_time = 1.0 / JOY_STEPS
 
 
 func start_brodcasting(addr: String, port: int) -> int:
@@ -215,20 +219,12 @@ func dont_send_rosout():
 
 
 func _input(event):
-	if event.is_action_pressed("end_manual_home"):
-		emit_signal("manual_home_complete")
-	
 	if event is InputEventJoypadMotion:
 		if not event.axis in JOY_AXIS_ORDER: return
-		var rounded := round(event.axis_value * JOY_STEPS)
-		
+		event.axis_value = round(event.axis_value * JOY_STEPS)
 		if event.axis in _last_axes:
-			if rounded == _last_axes[event.axis]: return
-		
-		_last_axes[event.axis] = rounded
-		var byte := JOY_AXIS_ORDER.find(event.axis) * 32 + rounded
-		# warning-ignore:return_value_discarded
-		bot_udp.put_packet(PoolByteArray([JOY_AXIS, byte]))
+			if event.axis_value == _last_axes[event.axis]: return
+		_pending_joy_event = event
 		
 	elif event is InputEventJoypadButton:
 		if not event.button_index in JOY_BUTTON_ORDER: return
@@ -236,6 +232,18 @@ func _input(event):
 		if event.pressed: byte += 128
 		# warning-ignore:return_value_discarded
 		bot_udp.put_packet(PoolByteArray([JOY_BUTTON, byte]))
+	
+		if event.is_action_pressed("end_manual_home"):
+			emit_signal("manual_home_complete")
+
+
+func _push_pending_joy():
+	if _pending_joy_event == null: return
+	_last_axes[_pending_joy_event.axis] = _pending_joy_event.axis_value
+	var byte := JOY_AXIS_ORDER.find(_pending_joy_event._pending_joy_event) * 32 + _pending_joy_event.axis_value
+	# warning-ignore:return_value_discarded
+	bot_udp.put_packet(PoolByteArray([JOY_AXIS, byte]))
+	_pending_joy_event = null
 
 
 func _process(_delta):
@@ -285,6 +293,7 @@ func _poll_udp():
 			broadcasting = false
 			_broadcast_timer.stop()
 		set_process_input(true)
+		_joystick_timer.start()
 		return
 	
 	_handle_message(msg)
