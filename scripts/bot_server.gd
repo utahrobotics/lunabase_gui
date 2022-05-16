@@ -103,7 +103,9 @@ func _ready():
 	
 	_joy_timer = Timer.new()
 	add_child(_joy_timer)
+		
 	_joy_timer.wait_time = 1.0 / JOY_STEPS
+	# warning-ignore:return_value_discarded
 	_joy_timer.connect("timeout", self, "_push_pending_joy")
 	
 #	_joy_timer.start()
@@ -226,7 +228,10 @@ func dont_send_rosout():
 func _input(event):
 	if event is InputEventJoypadMotion:
 		if not event.axis in JOY_AXIS_ORDER: return
-		_pending_joy_events[event.axis] = event.axis_value
+		var value: float = event.axis_value
+		if abs(value) <= DEADZONE:
+			value = 0
+		_pending_joy_events[event.axis] = value
 		
 	elif event is InputEventJoypadButton:
 		if not event.button_index in JOY_BUTTON_ORDER: return
@@ -255,13 +260,15 @@ func _push_pending_joy():
 			continue
 		_last_axes[axis] = axis_value
 		
-		var byte := order * 32 + axis_value
+		# warning-ignore: narrowing_conversion
+		var byte: int = order * 32 + axis_value
 		assert(byte >= 0 and byte <= 255)
 		payload.append(byte)
 	
 	if payload.size() == 1: return
 	# warning-ignore:return_value_discarded
 	bot_udp.put_packet(payload)
+#	bot_tcp.put_data(payload)
 	_pending_joy_events.clear()
 
 
