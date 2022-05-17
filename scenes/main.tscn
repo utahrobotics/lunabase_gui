@@ -15,7 +15,7 @@ func _on_ActionList_item_activated(index: int):
 		0:
 			BotServer.make_manual()
 		1:
-			BotServer.make_autonomous()		# TODO Improve
+			BotServer.initiate_autonomy_machine()		# TODO Improve
 		5:
 			BotServer.dump_action()
 		6:

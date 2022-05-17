@@ -30,16 +30,15 @@ const JOY_AXIS_ORDER := [
 
 # TODO Add PS4 control enums
 enum {
-	REQUEST_TERMINATE,
+	PING,
 	ODOMETRY,
 	ARM_ANGLE,
 	JOY_AXIS,
-	MAKE_AUTONOMOUS,
+	INITIATE_AUTONOMY_MACHINE,
 	MAKE_MANUAL,
 	ECHO,
-	MANUAL_HOME,			# Calibrates motors
+	START_MANUAL_HOME,			# Calibrates motors
 	CONNECTED,
-	PING,
 	ROSOUT,					# Rosout msg from bot, should be a security level and a ready-to-print string
 	SEND_ROSOUT,
 	DONT_SEND_ROSOUT,
@@ -173,10 +172,10 @@ func broadcast():
 	broadcaster.put_packet((bind_addr + ":" + str(bind_port)).to_utf8())
 
 
-func make_autonomous():
+func initiate_autonomy_machine():
 	# warning-ignore:return_value_discarded
-	bot_tcp.put_data(_make_byte(MAKE_AUTONOMOUS))
-	push_warning("Sent MAKE_AUTONOMOUS to bot")
+	bot_tcp.put_data(_make_byte(INITIATE_AUTONOMY_MACHINE))
+	push_warning("Sent INITIATE_AUTONOMY_MACHINE to bot")
 
 
 func make_manual():
@@ -203,14 +202,14 @@ func fake_init():
 	push_warning("Sent FAKE_INIT to bot")
 
 
-func manual_home(idx: int):
+func START_MANUAL_HOME(idx: int):
 	_manually_homing = true
-	var data := _make_byte(MANUAL_HOME)
+	var data := _make_byte(START_MANUAL_HOME)
 	assert(idx >= 0 and idx < 256)
 	data.append(idx)
 	# warning-ignore:return_value_discarded
 	bot_tcp.put_data(data)
-	push_warning("Sent MANUAL_HOME to bot")
+	push_warning("Sent START_MANUAL_HOME to bot")
 
 
 func send_rosout():
@@ -349,8 +348,8 @@ func _handle_message(msg: PoolByteArray):
 	var header := msg[0]
 	msg.remove(0)
 	match header:
-		REQUEST_TERMINATE:
-			push_warning("bot_udp has requested to terminate")
+		PING:
+			push_warning("lunabot pinged us!")
 		ODOMETRY:
 			# Pass data to rust module to deserialize
 			emit_signal("odometry", Odometry.new(
@@ -363,9 +362,9 @@ func _handle_message(msg: PoolByteArray):
 			emit_signal("arm_angle", Serde.deserialize_f32(msg))
 		ECHO:
 			match msg[0]:
-				MAKE_AUTONOMOUS:
+				INITIATE_AUTONOMY_MACHINE:
 					if _is_autonomous:
-						push_warning("Bot echoed MAKE_AUTONOMOUS but we already know it is...")
+						push_warning("Bot echoed INITIATE_AUTONOMY_MACHINE but we already know it is...")
 						return
 					_is_autonomous = true
 					emit_signal("autonomy_changed")
@@ -399,7 +398,7 @@ func _handle_message(msg: PoolByteArray):
 			var txt := msg.get_string_from_utf8()
 #			var txt := msg.decompress_dynamic(-1, File.COMPRESSION_GZIP).get_string_from_utf8()
 			emit_signal("rosout", level, txt)
-		MAKE_AUTONOMOUS:
+		INITIATE_AUTONOMY_MACHINE:
 			_is_autonomous = true
 			push_warning("Bot set itself to autonomous!")
 		MAKE_MANUAL:
