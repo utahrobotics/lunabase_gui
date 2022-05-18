@@ -52,7 +52,6 @@ signal arm_angle(angle)
 signal autonomy_changed
 signal rosout(level, msg)
 signal packet_received(delta)
-signal is_sending_rosout
 
 const DEADZONE := 0.1
 const BROADCAST_DELAY := 0.5

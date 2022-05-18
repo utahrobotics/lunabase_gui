@@ -129,25 +129,15 @@ script/source = "extends Button
 onready var label: Label = $\"../Label\"
 
 
-func _ready():
-	# warning-ignore:return_value_discarded
-	BotServer.connect(\"is_sending_rosout\", self, \"_on_is_sending_rosout\")
-
-
-func _on_is_sending_rosout():
-	if BotServer.get_is_sending_rosout():
-		text = \"Disable Rosout\"
-		label.text = \" Receiving Rosout\"
-	else:
-		text = \"Enable Rosout\"
-		label.text = \" Not Receiving Rosout\"
-
-
 func _on_Button_pressed():
 	if BotServer.get_is_sending_rosout():
 		BotServer.dont_send_rosout()
+		text = \"Enable Rosout\"
+		label.text = \" Not Receiving Rosout\"
 	else:
 		BotServer.send_rosout()
+		text = \"Disable Rosout\"
+		label.text = \" Receiving Rosout\"
 "
 
 [sub_resource type="GDScript" id=9]
