@@ -36,7 +36,6 @@ enum {
 	JOY_AXIS,
 	INITIATE_AUTONOMY_MACHINE,
 	MAKE_MANUAL,
-	ECHO,
 	START_MANUAL_HOME,			# Calibrates motors
 	CONNECTED,
 	ROSOUT,					# Rosout msg from bot, should be a security level and a ready-to-print string
@@ -215,12 +214,14 @@ func START_MANUAL_HOME(idx: int):
 func send_rosout():
 	# warning-ignore:return_value_discarded
 	bot_tcp.put_data(_make_byte(SEND_ROSOUT))
+	_is_sending_rosout = true
 	push_warning("Sent SEND_ROSOUT to Lunabot")
 
 
 func dont_send_rosout():
 	# warning-ignore:return_value_discarded
 	bot_tcp.put_data(_make_byte(DONT_SEND_ROSOUT))
+	_is_sending_rosout = false
 	push_warning("Sent DONT_SEND_ROSOUT to Lunabot")
 
 
@@ -360,38 +361,6 @@ func _handle_message(msg: PoolByteArray):
 			))
 		ARM_ANGLE:
 			emit_signal("arm_angle", Serde.deserialize_f32(msg))
-		ECHO:
-			match msg[0]:
-				INITIATE_AUTONOMY_MACHINE:
-					if _is_autonomous:
-						push_warning("Bot echoed INITIATE_AUTONOMY_MACHINE but we already know it is...")
-						return
-					_is_autonomous = true
-					emit_signal("autonomy_changed")
-					push_warning("Bot is autonomous")
-				MAKE_MANUAL:
-					if not _is_autonomous:
-						push_warning("Bot echoed MAKE_MANUAL but we already know it is...")
-						return
-					_is_autonomous = false
-					emit_signal("autonomy_changed")
-					push_warning("Bot is manual")
-				SEND_ROSOUT:
-					if _is_sending_rosout:
-						push_warning("Bot echoed SEND_ROSOUT but we already know it is...")
-						return
-					_is_sending_rosout = true
-					emit_signal("is_sending_rosout")
-					push_warning("Bot is sending rosout")
-				DONT_SEND_ROSOUT:
-					if not _is_sending_rosout:
-						push_warning("Bot echoed DONT_SEND_ROSOUT but we already know it is...")
-						return
-					_is_sending_rosout = false
-					emit_signal("is_sending_rosout")
-					push_warning("Bot is not sending rosout")
-				_:
-					push_error("Unrecognized echo header: " + str(msg[0]))
 		ROSOUT:
 			var level := msg[0]
 			msg.remove(0)
