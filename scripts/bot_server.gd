@@ -76,7 +76,7 @@ var _manually_homing := false
 var _last_packet_time := OS.get_system_time_msecs()
 var _broadcast_timer := Timer.new()
 var _is_autonomous := true
-var _is_sending_rosout := false
+var _is_sending_rosout := true
 var _was_in_deadzone := false
 
 var _last_axes := {}
