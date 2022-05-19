@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=2]
+[gd_scene load_steps=20 format=2]
 
 [ext_resource path="res://scripts/controllable_node.gd" type="Script" id=1]
 [ext_resource path="res://scenes/bot.tscn" type="PackedScene" id=2]
@@ -114,12 +114,27 @@ onready var line_edit: LineEdit = $\"../LineEdit\"
 func _on_ManualHome_pressed():
 	if not line_edit.text.is_valid_integer(): return
 	disabled = true
-	BotServer.manual_home(int(line_edit.text))
+	BotServer.start_manual_home(int(line_edit.text))
 
 
 func _ready():
 	# warning-ignore:return_value_discarded
 	BotServer.connect(\"manual_home_complete\", self, \"set_disabled\", [false])
+"
+
+[sub_resource type="ImageTexture" id=16]
+
+[sub_resource type="GDScript" id=15]
+script/source = "extends TextureRect
+
+
+func _ready():
+	BotServer.connect(\"image_received\", self, \"_on_img_received\")
+
+
+func _on_img_received(img: Image):
+	texture.image = img
+	push_warning(\"Received image!\")
 "
 
 [sub_resource type="GDScript" id=10]
@@ -452,10 +467,20 @@ margin_right = 505.0
 margin_bottom = 136.0
 rect_min_size = Vector2( 0, 20 )
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="RightHUD"]
+[node name="VidStream" type="TextureRect" parent="RightHUD"]
+margin_left = 505.0
 margin_top = 140.0
 margin_right = 505.0
-margin_bottom = 160.0
+margin_bottom = 140.0
+size_flags_horizontal = 8
+size_flags_vertical = 0
+texture = SubResource( 16 )
+script = SubResource( 15 )
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="RightHUD"]
+margin_top = 144.0
+margin_right = 505.0
+margin_bottom = 164.0
 alignment = 2
 
 [node name="Button" type="Button" parent="RightHUD/HBoxContainer2"]
@@ -474,7 +499,7 @@ text = " Receiving Rosout"
 
 [node name="VBoxContainer" type="VBoxContainer" parent="RightHUD"]
 margin_left = 155.0
-margin_top = 164.0
+margin_top = 168.0
 margin_right = 505.0
 margin_bottom = 586.0
 rect_min_size = Vector2( 350, 0 )

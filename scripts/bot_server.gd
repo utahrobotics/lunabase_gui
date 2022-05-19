@@ -44,6 +44,9 @@ enum {
 	DUMP_ACTION,
 	FAKE_INIT,
 	JOY_BUTTON,
+	VID_STREAM,
+	SEND_STREAM,
+	DONT_SEND_STREAM
 }
 
 signal manual_home_complete
@@ -52,6 +55,7 @@ signal arm_angle(angle)
 signal autonomy_changed
 signal rosout(level, msg)
 signal packet_received(delta)
+signal image_received(img)
 
 const DEADZONE := 0.1
 const BROADCAST_DELAY := 0.5
@@ -75,11 +79,13 @@ var _last_packet_time := OS.get_system_time_msecs()
 var _broadcast_timer := Timer.new()
 var _is_autonomous := true
 var _is_sending_rosout := true
+var _is_sending_stream := true
 var _was_in_deadzone := false
 
 var _last_axes := {}
 var _pending_joy_events = {}
 var _joy_timer: Timer
+var _frame_id := 0
 
 
 func get_is_autonomous() -> bool:
@@ -192,15 +198,15 @@ func dump_action():
 
 
 func fake_init():
-#	if not _is_autonomous:
-#		push_warning("Cannot fake init without entering manual control")
-#		return
+	if not _is_autonomous:
+		push_warning("Cannot fake init without entering manual control")
+		return
 	# warning-ignore:return_value_discarded
 	bot_tcp.put_data(_make_byte(FAKE_INIT))
 	push_warning("Sent FAKE_INIT to bot")
 
 
-func START_MANUAL_HOME(idx: int):
+func start_manual_home(idx: int):
 	_manually_homing = true
 	var data := _make_byte(START_MANUAL_HOME)
 	assert(idx >= 0 and idx < 256)
@@ -222,6 +228,20 @@ func dont_send_rosout():
 	bot_tcp.put_data(_make_byte(DONT_SEND_ROSOUT))
 	_is_sending_rosout = false
 	push_warning("Sent DONT_SEND_ROSOUT to Lunabot")
+
+
+func stream_vid():
+	# warning-ignore:return_value_discarded
+	bot_tcp.put_data(_make_byte(SEND_STREAM))
+	_is_sending_rosout = true
+	push_warning("Sent SEND_STREAM to Lunabot")
+
+
+func dont_stream_vid():
+	# warning-ignore:return_value_discarded
+	bot_tcp.put_data(_make_byte(DONT_SEND_STREAM))
+	_is_sending_rosout = false
+	push_warning("Sent DONT_SEND_STREAM to Lunabot")
 
 
 func _input(event):
@@ -372,6 +392,14 @@ func _handle_message(msg: PoolByteArray):
 		MAKE_MANUAL:
 			_is_autonomous = false
 			push_warning("Bot set itself to manual!")
+		VID_STREAM:
+			var new_frame_id := msg[0]
+			msg.remove(0)
+			if _frame_id < 220 and new_frame_id < _frame_id: return
+			_frame_id = new_frame_id
+			var img := Image.new()
+			img.load_jpg_from_buffer(msg)
+			emit_signal("image_received", img)
 		_:
 			push_error("Received unrecognized header: " + str(header))
 
