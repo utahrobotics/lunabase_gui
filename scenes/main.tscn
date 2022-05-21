@@ -1,10 +1,11 @@
-[gd_scene load_steps=20 format=2]
+[gd_scene load_steps=21 format=2]
 
 [ext_resource path="res://scripts/controllable_node.gd" type="Script" id=1]
 [ext_resource path="res://scenes/bot.tscn" type="PackedScene" id=2]
 [ext_resource path="res://scripts/pathing_render.gd" type="Script" id=3]
 [ext_resource path="res://scenes/position_gizmo.tscn" type="PackedScene" id=4]
 [ext_resource path="res://scenes/rotation_gizmo.tscn" type="PackedScene" id=5]
+[ext_resource path="res://no_image.png" type="Texture" id=6]
 
 [sub_resource type="GDScript" id=13]
 script/source = "extends ItemList
@@ -55,6 +56,8 @@ func _on_autonomy_changed():
 	else:
 		text = \"manual\"
 "
+
+[sub_resource type="ButtonGroup" id=16]
 
 [sub_resource type="QuadMesh" id=11]
 size = Vector2( 100, 10 )
@@ -122,21 +125,6 @@ func _ready():
 	BotServer.connect(\"manual_home_complete\", self, \"set_disabled\", [false])
 "
 
-[sub_resource type="ImageTexture" id=16]
-
-[sub_resource type="GDScript" id=15]
-script/source = "extends TextureRect
-
-
-func _ready():
-	BotServer.connect(\"image_received\", self, \"_on_img_received\")
-
-
-func _on_img_received(img: Image):
-	texture.image = img
-	push_warning(\"Received image!\")
-"
-
 [sub_resource type="GDScript" id=10]
 script/source = "extends Button
 
@@ -147,11 +135,11 @@ onready var label: Label = $\"../Label\"
 func _on_Button_pressed():
 	if BotServer.get_is_sending_rosout():
 		BotServer.dont_send_rosout()
-		text = \"Enable Rosout\"
+		text = \"Enable\"
 		label.text = \" Not Receiving Rosout\"
 	else:
 		BotServer.send_rosout()
-		text = \"Disable Rosout\"
+		text = \"Disable\"
 		label.text = \" Receiving Rosout\"
 "
 
@@ -241,6 +229,19 @@ func _add_line(msg: String, color:=Color.white):
 	add_child(label)
 "
 
+[sub_resource type="GDScript" id=15]
+script/source = "extends TextureRect
+
+
+func _ready():
+	BotServer.connect(\"image_received\", self, \"_on_img_received\")
+
+
+func _on_img_received(img: Image):
+	texture.image = img
+	push_warning(\"Received image!\")
+"
+
 [node name="Spatial" type="Spatial"]
 
 [node name="Line2D" type="Line2D" parent="."]
@@ -251,6 +252,7 @@ anchor_right = 0.5
 anchor_bottom = 1.0
 margin_left = 7.0
 margin_top = 7.0
+margin_right = -10.0
 
 [node name="CanvasLayer" type="CanvasLayer" parent="LeftHUD"]
 
@@ -286,7 +288,7 @@ text = "Bot Actions"
 script = SubResource( 6 )
 
 [node name="Control2" type="HBoxContainer" parent="LeftHUD"]
-margin_right = 505.0
+margin_right = 495.0
 margin_bottom = 30.0
 rect_min_size = Vector2( 0, 30 )
 
@@ -310,9 +312,27 @@ size_flags_vertical = 3
 text = "Manual"
 script = SubResource( 14 )
 
+[node name="HBoxContainer" type="HBoxContainer" parent="LeftHUD/Control2"]
+margin_left = 349.0
+margin_right = 495.0
+margin_bottom = 30.0
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="SimulationButton" type="Button" parent="LeftHUD/Control2/HBoxContainer"]
+margin_left = 66.0
+margin_right = 146.0
+margin_bottom = 30.0
+rect_min_size = Vector2( 0, 30 )
+size_flags_vertical = 0
+toggle_mode = true
+pressed = true
+group = SubResource( 16 )
+text = "Simulation"
+
 [node name="ViewportContainer" type="ViewportContainer" parent="LeftHUD"]
 margin_top = 34.0
-margin_right = 505.0
+margin_right = 495.0
 margin_bottom = 234.0
 
 [node name="Viewport" type="Viewport" parent="LeftHUD/ViewportContainer"]
@@ -334,7 +354,7 @@ size = 0.32
 
 [node name="ViewportContainer2" type="ViewportContainer" parent="LeftHUD"]
 margin_top = 238.0
-margin_right = 505.0
+margin_right = 495.0
 margin_bottom = 438.0
 
 [node name="Viewport" type="Viewport" parent="LeftHUD/ViewportContainer2"]
@@ -356,7 +376,7 @@ size = 0.32
 
 [node name="Control" type="Control" parent="LeftHUD"]
 margin_top = 442.0
-margin_right = 505.0
+margin_right = 495.0
 margin_bottom = 442.0
 
 [node name="Flat" type="MeshInstance2D" parent="LeftHUD/Control"]
@@ -383,32 +403,53 @@ margin_bottom = 14.0
 anchor_left = 0.5
 anchor_right = 1.0
 anchor_bottom = 1.0
+margin_left = 10.0
 margin_top = 7.0
 margin_right = -7.0
 margin_bottom = -7.0
 
-[node name="PacketDelay" type="VBoxContainer" parent="RightHUD"]
-margin_right = 505.0
+[node name="HBoxContainer3" type="HBoxContainer" parent="RightHUD"]
+margin_right = 495.0
+margin_bottom = 32.0
+alignment = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="RightHUD/HBoxContainer3"]
+margin_right = 375.0
+margin_bottom = 32.0
+size_flags_horizontal = 3
+
+[node name="StreamButton" type="Button" parent="RightHUD/HBoxContainer3/HBoxContainer"]
+margin_right = 93.0
+margin_bottom = 30.0
+rect_min_size = Vector2( 0, 30 )
+size_flags_vertical = 0
+toggle_mode = true
+group = SubResource( 16 )
+text = "VideoStream"
+
+[node name="PacketDelay" type="VBoxContainer" parent="RightHUD/HBoxContainer3"]
+margin_left = 379.0
+margin_right = 495.0
 margin_bottom = 32.0
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Label" type="Label" parent="RightHUD/PacketDelay"]
-margin_right = 505.0
+[node name="Label" type="Label" parent="RightHUD/HBoxContainer3/PacketDelay"]
+margin_right = 116.0
 margin_bottom = 14.0
 text = "Last Packet Delay:"
 align = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="RightHUD/PacketDelay"]
+[node name="HBoxContainer" type="HBoxContainer" parent="RightHUD/HBoxContainer3/PacketDelay"]
 margin_top = 18.0
-margin_right = 505.0
+margin_right = 116.0
 margin_bottom = 32.0
 alignment = 2
 
-[node name="Label2" type="Label" parent="RightHUD/PacketDelay/HBoxContainer"]
-margin_left = 473.0
-margin_right = 505.0
+[node name="Label2" type="Label" parent="RightHUD/HBoxContainer3/PacketDelay/HBoxContainer"]
+margin_left = 84.0
+margin_right = 116.0
 margin_bottom = 14.0
 text = "0 ms"
 script = SubResource( 3 )
@@ -416,7 +457,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Panel" type="Panel" parent="RightHUD/PacketDelay/HBoxContainer/Label2"]
+[node name="Panel" type="Panel" parent="RightHUD/HBoxContainer3/PacketDelay/HBoxContainer/Label2"]
 show_behind_parent = true
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -426,7 +467,7 @@ __meta__ = {
 
 [node name="CameraLock" type="Label" parent="RightHUD"]
 margin_top = 36.0
-margin_right = 505.0
+margin_right = 495.0
 margin_bottom = 50.0
 custom_colors/font_color = Color( 1, 0, 0, 1 )
 text = "Camera Locked"
@@ -435,19 +476,19 @@ script = SubResource( 4 )
 
 [node name="Control" type="Control" parent="RightHUD"]
 margin_top = 54.0
-margin_right = 505.0
+margin_right = 495.0
 margin_bottom = 84.0
 rect_min_size = Vector2( 0, 30 )
 
 [node name="HBoxContainer" type="HBoxContainer" parent="RightHUD"]
 margin_top = 88.0
-margin_right = 505.0
+margin_right = 495.0
 margin_bottom = 112.0
 alignment = 2
 
 [node name="ManualHome" type="Button" parent="RightHUD/HBoxContainer"]
-margin_left = 342.0
-margin_right = 443.0
+margin_left = 332.0
+margin_right = 433.0
 margin_bottom = 24.0
 focus_mode = 0
 size_flags_horizontal = 8
@@ -455,52 +496,42 @@ text = "Manual Home"
 script = SubResource( 5 )
 
 [node name="LineEdit" type="LineEdit" parent="RightHUD/HBoxContainer"]
-margin_left = 447.0
-margin_right = 505.0
+margin_left = 437.0
+margin_right = 495.0
 margin_bottom = 24.0
 align = 2
 max_length = 1
 
 [node name="Control2" type="Control" parent="RightHUD"]
 margin_top = 116.0
-margin_right = 505.0
+margin_right = 495.0
 margin_bottom = 136.0
 rect_min_size = Vector2( 0, 20 )
 
-[node name="VidStream" type="TextureRect" parent="RightHUD"]
-margin_left = 505.0
-margin_top = 140.0
-margin_right = 505.0
-margin_bottom = 140.0
-size_flags_horizontal = 8
-size_flags_vertical = 0
-texture = SubResource( 16 )
-script = SubResource( 15 )
-
 [node name="HBoxContainer2" type="HBoxContainer" parent="RightHUD"]
-margin_top = 144.0
-margin_right = 505.0
-margin_bottom = 164.0
+margin_top = 140.0
+margin_right = 495.0
+margin_bottom = 160.0
 alignment = 2
 
 [node name="Button" type="Button" parent="RightHUD/HBoxContainer2"]
-margin_left = 280.0
-margin_right = 388.0
+margin_left = 318.0
+margin_right = 378.0
 margin_bottom = 20.0
-text = "Disable Rosout"
+text = "Disable"
 script = SubResource( 10 )
 
 [node name="Label" type="Label" parent="RightHUD/HBoxContainer2"]
-margin_left = 392.0
+margin_left = 382.0
 margin_top = 3.0
-margin_right = 505.0
+margin_right = 495.0
 margin_bottom = 17.0
 text = " Receiving Rosout"
 
 [node name="VBoxContainer" type="VBoxContainer" parent="RightHUD"]
-margin_left = 155.0
-margin_top = 168.0
-margin_right = 505.0
+margin_left = 145.0
+margin_top = 164.0
+margin_right = 495.0
 margin_bottom = 586.0
 rect_min_size = Vector2( 350, 0 )
 size_flags_horizontal = 8
@@ -557,6 +588,20 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 script = SubResource( 8 )
 
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="VidStream" type="TextureRect" parent="CanvasLayer"]
+visible = false
+margin_left = 210.0
+margin_top = 68.0
+margin_right = 827.0
+margin_bottom = 494.0
+size_flags_horizontal = 8
+size_flags_vertical = 0
+texture = ExtResource( 6 )
+stretch_mode = 1
+script = SubResource( 15 )
+
 [node name="Box" type="Spatial" parent="."]
 
 [node name="Bot" parent="Box" instance=ExtResource( 2 )]
@@ -592,6 +637,8 @@ directional_shadow_mode = 1
 
 [connection signal="item_activated" from="LeftHUD/CanvasLayer/Control/ActionList" to="LeftHUD/CanvasLayer/Control/ActionList" method="_on_ActionList_item_activated"]
 [connection signal="pressed" from="LeftHUD/CanvasLayer/Button" to="LeftHUD/CanvasLayer/Button" method="_on_Button_pressed"]
+[connection signal="pressed" from="LeftHUD/Control2/HBoxContainer/SimulationButton" to="CanvasLayer/VidStream" method="hide"]
+[connection signal="pressed" from="RightHUD/HBoxContainer3/HBoxContainer/StreamButton" to="CanvasLayer/VidStream" method="show"]
 [connection signal="pressed" from="RightHUD/HBoxContainer/ManualHome" to="RightHUD/HBoxContainer/ManualHome" method="_on_ManualHome_pressed"]
 [connection signal="pressed" from="RightHUD/HBoxContainer2/Button" to="RightHUD/HBoxContainer2/Button" method="_on_Button_pressed"]
 [connection signal="pressed" from="RightHUD/VBoxContainer/HBoxContainer/Button" to="RightHUD/VBoxContainer/HBoxContainer/Button" method="_on_Button_pressed"]

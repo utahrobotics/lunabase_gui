@@ -325,10 +325,6 @@ func _poll_udp():
 		push_error("Got 0 length message")
 		return
 	
-	var current_time := OS.get_system_time_msecs()
-	emit_signal("packet_received", current_time - _last_packet_time)
-	_last_packet_time = current_time
-	
 	if msg[0] == CONNECTED:
 		var err := bot_udp.set_dest_address(bot_udp.get_packet_ip(), bot_udp.get_packet_port())
 		if err != OK:
@@ -357,14 +353,14 @@ func _poll_tcp():
 		push_error("Got 0 length message")
 		return
 	
-	var current_time := OS.get_system_time_msecs()
-	emit_signal("packet_received", current_time - _last_packet_time)
-	_last_packet_time = current_time
-	
 	_handle_message(msg)
 
 
 func _handle_message(msg: PoolByteArray):
+	var current_time := OS.get_system_time_msecs()
+	emit_signal("packet_received", current_time - _last_packet_time)
+	_last_packet_time = current_time
+	
 	var header := msg[0]
 	msg.remove(0)
 	match header:
