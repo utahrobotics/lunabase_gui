@@ -395,16 +395,21 @@ func _handle_message(msg: PoolByteArray):
 		INITIATE_AUTONOMY_MACHINE:
 			_is_autonomous = true
 			push_warning("Bot set itself to autonomous!")
+			emit_signal("autonomy_changed")
 		MAKE_MANUAL:
 			_is_autonomous = false
 			push_warning("Bot set itself to manual!")
+			emit_signal("autonomy_changed")
 		VID_STREAM:
 			var new_frame_id := msg[0]
 			msg.remove(0)
 			if _frame_id < 220 and new_frame_id < _frame_id: return
 			_frame_id = new_frame_id
 			var img := Image.new()
-			img.load_jpg_from_buffer(msg)
+			var err := img.load_jpg_from_buffer(msg)
+			if err != OK:
+				push_error("Error parsing webcam jpg: " + str(err))
+				return
 			emit_signal("image_received", img)
 		_:
 			push_error("Received unrecognized header: " + str(header))
