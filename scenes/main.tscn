@@ -17,9 +17,11 @@ func _on_ActionList_item_activated(index: int):
 			BotServer.make_manual()
 		1:
 			BotServer.initiate_autonomy_machine()		# TODO Improve
-		5:
+		2:
+			BotServer.dig_action()
+		4:
 			BotServer.dump_action()
-		6:
+		5:
 			BotServer.fake_init()
 "
 
@@ -270,10 +272,10 @@ size_flags_vertical = 3
 
 [node name="ActionList" type="ItemList" parent="LeftHUD/CanvasLayer/Control"]
 margin_right = 200.0
-margin_bottom = 135.0
+margin_bottom = 117.0
 rect_min_size = Vector2( 0, 100 )
 size_flags_vertical = 2
-items = [ "Make Fully Manual", null, false, "Initiate Autonomy", null, false, "Dig", null, false, "Finish Dig", null, false, "Align to Bin", null, false, "Dump", null, false, "FakeInit", null, false ]
+items = [ "Make Fully Manual", null, false, "Initiate Autonomy", null, false, "Dig", null, false, "Align to Bin", null, true, "Dump", null, false, "FakeInit", null, false ]
 auto_height = true
 script = SubResource( 13 )
 

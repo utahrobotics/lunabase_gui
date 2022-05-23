@@ -46,7 +46,8 @@ enum {
 	JOY_BUTTON,
 	VID_STREAM,
 	SEND_STREAM,
-	DONT_SEND_STREAM
+	DONT_SEND_STREAM,
+	DIG_ACTION
 }
 
 signal manual_home_complete
@@ -195,6 +196,15 @@ func dump_action():
 	# warning-ignore:return_value_discarded
 	bot_tcp.put_data(_make_byte(DUMP_ACTION))
 	push_warning("Sent DUMP_ACTION to bot")
+
+
+func dig_action():
+	if not _is_autonomous:
+		push_warning("Cannot dig without entering manual control")
+		return
+	# warning-ignore:return_value_discarded
+	bot_tcp.put_data(_make_byte(DIG_ACTION))
+	push_warning("Sent DIG_ACTION to bot")
 
 
 func fake_init():
