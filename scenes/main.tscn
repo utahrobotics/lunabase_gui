@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=2]
+[gd_scene load_steps=24 format=2]
 
 [ext_resource path="res://scripts/controllable_node.gd" type="Script" id=1]
 [ext_resource path="res://scenes/bot.tscn" type="PackedScene" id=2]
@@ -92,73 +92,18 @@ func _on_arm_angle(angle: float):
 	label.text = str(stepify(rad2deg(angle), 0.1)) + \"°\"
 "
 
-[sub_resource type="GDScript" id=17]
-script/source = "extends Button
-
-
-func _on_StreamButton_pressed():
-	BotServer.stream_vid()
-"
-
-[sub_resource type="GDScript" id=3]
+[sub_resource type="GDScript" id=19]
 script/source = "extends Label
 
 
 func _ready():
 	# warning-ignore:return_value_discarded
-	BotServer.connect(\"packet_received\", self, \"_update_delay\")
+	BotServer.connect(\"arm_depth\", self, \"_on_arm_depth\")
+	text = \"0.0\"
 
 
-func _update_delay(delay: int):
-	text = str(delay) + \" ms\"
-"
-
-[sub_resource type="GDScript" id=4]
-script/source = "extends Label
-
-
-func _on_Camera_camera_lock_changed(val):
-	if val:
-		text = \"Camera Locked\"
-		set(\"custom_colors/font_color\", Color.red)
-	else:
-		text = \"Camera Unlocked\"
-		set(\"custom_colors/font_color\", Color.green)
-"
-
-[sub_resource type="GDScript" id=5]
-script/source = "extends Button
-
-
-onready var line_edit: LineEdit = $\"../LineEdit\"
-
-
-func _on_ManualHome_pressed():
-	if not line_edit.text.is_valid_integer(): return
-	BotServer.start_manual_home(int(line_edit.text))
-
-
-func _ready():
-	# warning-ignore:return_value_discarded
-	BotServer.connect(\"manual_home_complete\", self, \"set_disabled\", [false])
-"
-
-[sub_resource type="GDScript" id=10]
-script/source = "extends Button
-
-
-onready var label: Label = $\"../Label\"
-
-
-func _on_Button_pressed():
-	if BotServer.get_is_sending_rosout():
-		BotServer.dont_send_rosout()
-		text = \"Enable\"
-		label.text = \" Not Receiving Rosout\"
-	else:
-		BotServer.send_rosout()
-		text = \"Disable\"
-		label.text = \" Receiving Rosout\"
+func _on_arm_depth(depth: float):
+	text = str(stepify(depth, 0.01))
 "
 
 [sub_resource type="GDScript" id=9]
@@ -245,6 +190,75 @@ func _add_line(msg: String, color:=Color.white):
 	label.align = Label.ALIGN_RIGHT
 	label.autowrap = true
 	add_child(label)
+"
+
+[sub_resource type="GDScript" id=17]
+script/source = "extends Button
+
+
+func _on_StreamButton_pressed():
+	BotServer.stream_vid()
+"
+
+[sub_resource type="GDScript" id=3]
+script/source = "extends Label
+
+
+func _ready():
+	# warning-ignore:return_value_discarded
+	BotServer.connect(\"packet_received\", self, \"_update_delay\")
+
+
+func _update_delay(delay: int):
+	text = str(delay) + \" ms\"
+"
+
+[sub_resource type="GDScript" id=4]
+script/source = "extends Label
+
+
+func _on_Camera_camera_lock_changed(val):
+	if val:
+		text = \"Camera Locked\"
+		set(\"custom_colors/font_color\", Color.red)
+	else:
+		text = \"Camera Unlocked\"
+		set(\"custom_colors/font_color\", Color.green)
+"
+
+[sub_resource type="GDScript" id=5]
+script/source = "extends Button
+
+
+onready var line_edit: LineEdit = $\"../LineEdit\"
+
+
+func _on_ManualHome_pressed():
+	if not line_edit.text.is_valid_integer(): return
+	BotServer.start_manual_home(int(line_edit.text))
+
+
+func _ready():
+	# warning-ignore:return_value_discarded
+	BotServer.connect(\"manual_home_complete\", self, \"set_disabled\", [false])
+"
+
+[sub_resource type="GDScript" id=10]
+script/source = "extends Button
+
+
+onready var label: Label = $\"../Label\"
+
+
+func _on_Button_pressed():
+	if BotServer.get_is_sending_rosout():
+		BotServer.dont_send_rosout()
+		text = \"Enable\"
+		label.text = \" Not Receiving Rosout\"
+	else:
+		BotServer.send_rosout()
+		text = \"Disable\"
+		label.text = \" Receiving Rosout\"
 "
 
 [sub_resource type="GDScript" id=15]
@@ -419,6 +433,67 @@ margin_bottom = 80.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_bottom = 14.0
+script = SubResource( 19 )
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+margin_left = 667.0
+margin_top = 171.0
+margin_right = 1017.0
+margin_bottom = 593.0
+rect_min_size = Vector2( 350, 0 )
+size_flags_horizontal = 8
+size_flags_vertical = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+margin_right = 350.0
+margin_bottom = 20.0
+alignment = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/HBoxContainer"]
+margin_left = 177.0
+margin_top = 3.0
+margin_right = 276.0
+margin_bottom = 17.0
+text = "Rosout Console"
+
+[node name="Label2" type="Label" parent="VBoxContainer/HBoxContainer"]
+margin_left = 280.0
+margin_top = 3.0
+margin_right = 296.0
+margin_bottom = 17.0
+text = "(0)"
+script = SubResource( 9 )
+
+[node name="Button" type="Button" parent="VBoxContainer/HBoxContainer"]
+margin_left = 300.0
+margin_right = 350.0
+margin_bottom = 20.0
+rect_min_size = Vector2( 50, 0 )
+focus_mode = 0
+text = "Show"
+script = SubResource( 7 )
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
+visible = false
+margin_top = 24.0
+margin_right = 350.0
+margin_bottom = 422.0
+size_flags_vertical = 3
+
+[node name="PanelContainer" type="PanelContainer" parent="VBoxContainer/ScrollContainer"]
+margin_right = 350.0
+margin_bottom = 398.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/PanelContainer"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 343.0
+margin_bottom = 391.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = SubResource( 8 )
 
 [node name="RightHUD" type="VBoxContainer" parent="."]
 anchor_left = 0.5
@@ -550,66 +625,6 @@ margin_right = 495.0
 margin_bottom = 17.0
 text = " Receiving Rosout"
 
-[node name="VBoxContainer" type="VBoxContainer" parent="RightHUD"]
-margin_left = 145.0
-margin_top = 164.0
-margin_right = 495.0
-margin_bottom = 586.0
-rect_min_size = Vector2( 350, 0 )
-size_flags_horizontal = 8
-size_flags_vertical = 3
-
-[node name="HBoxContainer" type="HBoxContainer" parent="RightHUD/VBoxContainer"]
-margin_right = 350.0
-margin_bottom = 20.0
-alignment = 2
-
-[node name="Label" type="Label" parent="RightHUD/VBoxContainer/HBoxContainer"]
-margin_left = 177.0
-margin_top = 3.0
-margin_right = 276.0
-margin_bottom = 17.0
-text = "Rosout Console"
-
-[node name="Label2" type="Label" parent="RightHUD/VBoxContainer/HBoxContainer"]
-margin_left = 280.0
-margin_top = 3.0
-margin_right = 296.0
-margin_bottom = 17.0
-text = "(0)"
-script = SubResource( 9 )
-
-[node name="Button" type="Button" parent="RightHUD/VBoxContainer/HBoxContainer"]
-margin_left = 300.0
-margin_right = 350.0
-margin_bottom = 20.0
-rect_min_size = Vector2( 50, 0 )
-focus_mode = 0
-text = "Show"
-script = SubResource( 7 )
-
-[node name="ScrollContainer" type="ScrollContainer" parent="RightHUD/VBoxContainer"]
-visible = false
-margin_top = 24.0
-margin_right = 350.0
-margin_bottom = 422.0
-size_flags_vertical = 3
-
-[node name="PanelContainer" type="PanelContainer" parent="RightHUD/VBoxContainer/ScrollContainer"]
-margin_right = 350.0
-margin_bottom = 398.0
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="VBoxContainer" type="VBoxContainer" parent="RightHUD/VBoxContainer/ScrollContainer/PanelContainer"]
-margin_left = 7.0
-margin_top = 7.0
-margin_right = 343.0
-margin_bottom = 391.0
-size_flags_horizontal = 3
-size_flags_vertical = 3
-script = SubResource( 8 )
-
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
 [node name="VidStream" type="TextureRect" parent="CanvasLayer"]
@@ -661,9 +676,9 @@ directional_shadow_mode = 1
 [connection signal="pressed" from="LeftHUD/CanvasLayer/Button" to="LeftHUD/CanvasLayer/Button" method="_on_Button_pressed"]
 [connection signal="pressed" from="LeftHUD/Control2/HBoxContainer/SimulationButton" to="LeftHUD/Control2/HBoxContainer/SimulationButton" method="_on_SimulationButton_pressed"]
 [connection signal="pressed" from="LeftHUD/Control2/HBoxContainer/SimulationButton" to="CanvasLayer/VidStream" method="hide"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/Button" to="VBoxContainer/HBoxContainer/Button" method="_on_Button_pressed"]
 [connection signal="pressed" from="RightHUD/HBoxContainer3/HBoxContainer/StreamButton" to="RightHUD/HBoxContainer3/HBoxContainer/StreamButton" method="_on_StreamButton_pressed"]
 [connection signal="pressed" from="RightHUD/HBoxContainer3/HBoxContainer/StreamButton" to="CanvasLayer/VidStream" method="show"]
 [connection signal="pressed" from="RightHUD/HBoxContainer/ManualHome" to="RightHUD/HBoxContainer/ManualHome" method="_on_ManualHome_pressed"]
 [connection signal="pressed" from="RightHUD/HBoxContainer2/Button" to="RightHUD/HBoxContainer2/Button" method="_on_Button_pressed"]
-[connection signal="pressed" from="RightHUD/VBoxContainer/HBoxContainer/Button" to="RightHUD/VBoxContainer/HBoxContainer/Button" method="_on_Button_pressed"]
 [connection signal="camera_lock_changed" from="Camera" to="RightHUD/CameraLock" method="_on_Camera_camera_lock_changed"]

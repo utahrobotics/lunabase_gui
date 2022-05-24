@@ -32,7 +32,7 @@ const JOY_AXIS_ORDER := [
 enum {
 	PING,
 	ODOMETRY,
-	ARM_ANGLE,
+	ARM_DEPTH,
 	JOY_AXIS,
 	INITIATE_AUTONOMY_MACHINE,
 	MAKE_MANUAL,
@@ -51,7 +51,7 @@ enum {
 }
 
 signal odometry(odometry)
-signal arm_angle(angle)
+signal arm_depth(angle)
 signal autonomy_changed
 signal rosout(level, msg)
 signal packet_received(delta)
@@ -380,8 +380,8 @@ func _handle_message(msg: PoolByteArray):
 				Serde.deserialize_vector3(msg.subarray(28, 39)),
 				Serde.deserialize_vector3(msg.subarray(40, 51))
 			))
-		ARM_ANGLE:
-			emit_signal("arm_angle", Serde.deserialize_f32(msg))
+		ARM_DEPTH:
+			emit_signal("arm_depth", Serde.deserialize_f32(msg))
 		ROSOUT:
 			var level := msg[0]
 			msg.remove(0)
