@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=2]
+[gd_scene load_steps=22 format=2]
 
 [ext_resource path="res://scripts/controllable_node.gd" type="Script" id=1]
 [ext_resource path="res://scenes/bot.tscn" type="PackedScene" id=2]
@@ -68,28 +68,6 @@ script/source = "extends Button
 
 func _on_SimulationButton_pressed():
 	BotServer.dont_stream_vid()
-"
-
-[sub_resource type="QuadMesh" id=11]
-size = Vector2( 100, 10 )
-center_offset = Vector3( 50, 0, 0 )
-
-[sub_resource type="GDScript" id=12]
-script/source = "extends MeshInstance2D
-
-
-onready var label: Label = $\"../Panel/Label\"
-
-
-func _ready():
-	# warning-ignore:return_value_discarded
-	BotServer.connect(\"arm_angle\", self, \"_on_arm_angle\")
-	label.text = \"0°\"
-
-
-func _on_arm_angle(angle: float):
-	rotation = angle
-	label.text = str(stepify(rad2deg(angle), 0.1)) + \"°\"
 "
 
 [sub_resource type="GDScript" id=19]
@@ -236,11 +214,6 @@ onready var line_edit: LineEdit = $\"../LineEdit\"
 func _on_ManualHome_pressed():
 	if not line_edit.text.is_valid_integer(): return
 	BotServer.start_manual_home(int(line_edit.text))
-
-
-func _ready():
-	# warning-ignore:return_value_discarded
-	BotServer.connect(\"manual_home_complete\", self, \"set_disabled\", [false])
 "
 
 [sub_resource type="GDScript" id=10]
@@ -413,15 +386,6 @@ size = 0.32
 margin_top = 442.0
 margin_right = 495.0
 margin_bottom = 442.0
-
-[node name="Flat" type="MeshInstance2D" parent="LeftHUD/Control"]
-position = Vector2( 48, 73 )
-mesh = SubResource( 11 )
-
-[node name="Arm" type="MeshInstance2D" parent="LeftHUD/Control"]
-position = Vector2( 48, 73 )
-mesh = SubResource( 11 )
-script = SubResource( 12 )
 
 [node name="Panel" type="Panel" parent="LeftHUD/Control"]
 margin_left = -1.0
