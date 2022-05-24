@@ -291,6 +291,7 @@ size_flags_vertical = 3
 margin_right = 200.0
 margin_bottom = 117.0
 rect_min_size = Vector2( 0, 100 )
+focus_mode = 0
 size_flags_vertical = 2
 items = [ "Make Fully Manual", null, false, "Initiate Autonomy", null, false, "Dig", null, false, "Align to Bin", null, true, "Dump", null, false, "FakeInit", null, false ]
 auto_height = true
