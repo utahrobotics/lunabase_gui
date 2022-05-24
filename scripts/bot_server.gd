@@ -158,9 +158,9 @@ func dump_action():
 
 
 func fake_init():
-#	if not _is_autonomous:
-#		push_warning("Cannot fake init without entering manual control")
-#		return
+	if not _is_autonomous:
+		push_warning("Cannot fake init without entering manual control")
+		return
 	# warning-ignore:return_value_discarded
 	bot_tcp.put_data(_make_byte(FAKE_INIT))
 	push_warning("Sent FAKE_INIT to bot")
