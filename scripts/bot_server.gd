@@ -128,6 +128,7 @@ func reset_connection():
 	set_process(false)
 	set_process_input(false)
 	_broadcast_timer.stop()
+	_is_autonomous = false
 
 
 func broadcast():
