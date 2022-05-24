@@ -23,6 +23,7 @@ func _on_ActionList_item_activated(index: int):
 			BotServer.dump_action()
 		5:
 			BotServer.fake_init()
+	unselect_all()
 "
 
 [sub_resource type="GDScript" id=6]
@@ -134,7 +135,6 @@ onready var line_edit: LineEdit = $\"../LineEdit\"
 
 func _on_ManualHome_pressed():
 	if not line_edit.text.is_valid_integer(): return
-	disabled = true
 	BotServer.start_manual_home(int(line_edit.text))
 
 

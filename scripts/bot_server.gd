@@ -50,7 +50,6 @@ enum {
 	DIG_ACTION
 }
 
-signal manual_home_complete
 signal odometry(odometry)
 signal arm_angle(angle)
 signal autonomy_changed
@@ -269,9 +268,6 @@ func _input(event):
 		if event.pressed: byte += 128
 		# warning-ignore:return_value_discarded
 		bot_udp.put_packet(PoolByteArray([JOY_BUTTON, byte]))
-	
-		if event.is_action_pressed("end_manual_home"):
-			emit_signal("manual_home_complete")
 
 
 func _push_pending_joy():
