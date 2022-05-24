@@ -51,14 +51,14 @@ script/source = "extends LineEdit
 signal valid_input
 
 
-func _ready():
-	for interface in IP.get_local_interfaces():
-		var type : String = interface[\"friendly\"].to_lower()
-		if type == \"wifi\" or type == \"wi-fi\":
-			for addr in interface[\"addresses\"]:
-				if addr.count(\".\") == 3:
-					text = addr
-					return
+#func _ready():
+#	for interface in IP.get_local_interfaces():
+#		var type : String = interface[\"friendly\"].to_lower()
+#		if type == \"wifi\" or type == \"wi-fi\":
+#			for addr in interface[\"addresses\"]:
+#				if addr.count(\".\") == 3:
+#					text = addr
+#					return
 
 
 func _on_LineEdit_text_entered(new_text: String):
@@ -133,7 +133,7 @@ margin_top = 18.0
 margin_right = 150.0
 margin_bottom = 42.0
 rect_min_size = Vector2( 150, 0 )
-text = "127.0.0.1"
+text = "192.168.0.190"
 align = 1
 script = SubResource( 1 )
 
